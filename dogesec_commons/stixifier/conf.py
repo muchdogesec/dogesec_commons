@@ -1,0 +1,1 @@
+TXT2STIX_INCLUDE_URL = "https://github.com/muchdogesec/txt2stix/blob/main/includes/"

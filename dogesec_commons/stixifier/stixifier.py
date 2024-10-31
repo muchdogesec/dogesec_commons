@@ -44,7 +44,7 @@ class ReportProperties:
 
 
 class StixifyProcessor:
-    def __init__(self, file: io.FileIO, profile: models.Profile, job_id: uuid.UUID, post=None, file2txt_mode='html', report_id=None) -> None:
+    def __init__(self, file: io.FileIO, profile: models.Profile, job_id: uuid.UUID, post=None, file2txt_mode='html', report_id=None, base_url=None) -> None:
         self.job_id = str(job_id)
         self.extra_data = dict()
         self.report_id = report_id
@@ -54,6 +54,7 @@ class StixifyProcessor:
         self.file2txt_mode = file2txt_mode
         self.md_images = []
         self.processed_image_base_url = ""
+        self.base_url = base_url
 
         self.filename = self.tmpdir/Path(file.name).name
         self.filename.write_bytes(file.read())
@@ -66,7 +67,7 @@ class StixifyProcessor:
 
     def file2txt(self):
         parser_class = get_parser_class(self.file2txt_mode, self.filename.name)
-        converter: BaseParser = parser_class(self.filename, self.file2txt_mode, self.profile.extract_text_from_image, settings.GOOGLE_VISION_API_KEY)
+        converter: BaseParser = parser_class(self.filename, self.file2txt_mode, self.profile.extract_text_from_image, settings.GOOGLE_VISION_API_KEY, base_url=self.base_url)
         output = converter.convert(processed_image_base_url=self.processed_image_base_url)
         if self.profile.defang:
             output = Fanger(output).defang()

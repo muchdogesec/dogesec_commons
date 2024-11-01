@@ -3,6 +3,7 @@ from arango import ArangoClient
 from django.conf import settings
 from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiParameter
+from ..utils.pagination import Pagination
 
 from . import conf
 
@@ -191,12 +192,12 @@ class ArangoDBHelper:
             OpenApiParameter(
                 "page",
                 type=int,
-                description="page description",
+                description=Pagination.page_query_description,
             ),
             OpenApiParameter(
                 "page_size",
                 type=int,
-                description="page size description",
+                description=Pagination.page_size_query_description,
             ),
         ]
         return parameters

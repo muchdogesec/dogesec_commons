@@ -4,12 +4,21 @@ import uritemplate
 
 from drf_spectacular.contrib.django_filters import DjangoFilterExtension, get_view_model
 class OverrideDjangoFilterExtension(DjangoFilterExtension):
-    priority = 1
-    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
+    priority = 10
+    def get_schema_operation_parameters(self, auto_schema: AutoSchema, *args, **kwargs):
         model = get_view_model(auto_schema.view)
         if not model:
-            return self.target.get_schema_operation_parameters(auto_schema.view, *args, **kwargs)
+            return self.override(auto_schema)
         return super().get_schema_operation_parameters(auto_schema, *args, **kwargs)
+    
+    def override(self, autoschema):
+        result = []
+        filterset_class = self.target.get_filterset_class(autoschema.view)
+        for field_name, filter_field in filterset_class.base_filters.items():
+            result += self.resolve_filter_field(
+                autoschema, None, filterset_class, field_name, filter_field
+            )
+        return result
 
 
 class CustomAutoSchema(AutoSchema):

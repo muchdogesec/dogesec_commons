@@ -1,0 +1,21 @@
+name: Create Release
+run-name: creating release
+on:
+    workflow_dispatch:
+
+jobs:
+    create-release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Install pypa/build
+              run: python3 -m pip install build --user
+
+            - name: Build a binary wheel and a source tarball
+              run: python3 -m build
+
+            - name: Make release
+              env:
+                GITHUB_TOKEN: ${{ github.token }}
+              run: |
+                gh release create '${{ github.ref_name }}' --repo '${{ github.repository }}' --notes ""
+                gh release upload '${{ github.ref_name }}' dist/** --repo '${{ github.repository }}'

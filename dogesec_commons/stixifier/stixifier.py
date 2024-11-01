@@ -40,9 +40,6 @@ class ReportProperties:
     created: str = None
 
 
-
-
-
 class StixifyProcessor:
     def __init__(self, file: io.FileIO, profile: models.Profile, job_id: uuid.UUID, post=None, file2txt_mode='html', report_id=None, base_url=None) -> None:
         self.job_id = str(job_id)

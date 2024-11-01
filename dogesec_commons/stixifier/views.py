@@ -1,7 +1,7 @@
 from .models import Profile
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from .utils import Pagination, Ordering
+from ..utils import Pagination, Ordering
 
 from rest_framework import viewsets, response, mixins
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter

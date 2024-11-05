@@ -14,7 +14,9 @@ class QueryParams:
         "value",
         description=textwrap.dedent(
             """
-            Search by the `value` field field of the SCO. This is the IoC. So if you're looking to retrieve a IP address by address you would enter the IP address here. Similarly, if you're looking for a credit card you would enter the card number here. \n\n Search is wildcard. For example, `1.1` will return SCOs with `value` fields; `1.1.1.1`, `2.1.1.2`, etc. \n\n If `value` field is named differently for the Object (e.g. `hash`) it will still be searched because these have been aliased to the `value` in the database search).
+            Search by the `value` field field of the SCO. This is the IoC. So if you're looking to retrieve a IP address by address you would enter the IP address here. Similarly, if you're looking for a credit card you would enter the card number here.
+            Search is wildcard. For example, `1.1` will return SCOs with `value` fields; `1.1.1.1`, `2.1.1.2`, etc.
+            If `value` field is named differently for the Object (e.g. `hash`) it will still be searched because these have been aliased to the `value` in the database search).
             """
         ),
     )
@@ -51,7 +53,8 @@ class QueryParams:
         "labels",
         description=textwrap.dedent(
             """
-            Allows results to be filtered on each value in the `labels` field of the SDO. Each value in the `labels` list will be searched individually. \n\n Search is wildcard. For example, `needs` will return SDOs with `labels`; `need-attribution`, `needs-review`, etc. The value entered only needs to match one item in the `labels` list to return results.
+            Allows results to be filtered on each value in the `labels` field of the SDO. Each value in the `labels` list will be searched individually.
+            Search is wildcard. For example, `needs` will return SDOs with `labels`; `need-attribution`, `needs-review`, etc. The value entered only needs to match one item in the `labels` list to return results.
             """
         ),
     )

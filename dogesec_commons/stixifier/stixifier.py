@@ -38,6 +38,7 @@ class ReportProperties:
     confidence: int = None
     labels: list[str] = None
     created: str = None
+    kwargs: dict = {}
 
 
 class StixifyProcessor:
@@ -99,6 +100,7 @@ class StixifyProcessor:
             extractors=extractors,
             report_id=self.report_id,
             created=self.report_prop.created,
+            **self.report_prop.kwargs,
         )
         self.extra_data['_stixify_report_id'] = str(bundler.report.id)
         input_text = txt2stix.remove_data_images(self.output_md)

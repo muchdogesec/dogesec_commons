@@ -32,7 +32,7 @@ Issues = "https://github.com/muchdogesec/stixifier_commons/issues"
 
 [project.optional-dependencies]
 stixifier = [
-    "txt2stix @ https://github.com/muchdogesec/txt2stix/releases/download/main-2024-11-01/txt2stix-0.0.1b1-py3-none-any.whl",
-    "file2txt @ https://github.com/muchdogesec/file2txt/archive/main.zip",
-    "stix2arango @ https://github.com/muchdogesec/stix2arango/archive/main.zip",
+    "txt2stix",
+    "file2txt",
+    "stix2arango",
 ]

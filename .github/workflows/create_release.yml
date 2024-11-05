@@ -1,7 +1,10 @@
 name: Create Release
 run-name: creating release
+
 on:
-    workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
     create-release:

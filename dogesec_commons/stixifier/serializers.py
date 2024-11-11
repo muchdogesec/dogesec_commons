@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 from rest_framework import serializers
 
 from . import conf
@@ -32,6 +33,14 @@ def validate_model(model):
         raise ValidationError(str(e))
     return model
 
+def validate_extractor(typestr, types, name):
+    extractors = txt2stix.extractions.parse_extraction_config(
+            txt2stix.txt2stix.INCLUDES_PATH
+        )
+    if  name not in extractors or extractors[name].type not in types:
+        raise ValidationError(f"`{name}` is not a valid {typestr}", 400)
+
+
 def uses_ai(slugs):
     extractors = txt2stix.extractions.parse_extraction_config(
             txt2stix.txt2stix.INCLUDES_PATH
@@ -55,6 +64,21 @@ class ProfileSerializer(serializers.ModelSerializer):
     ai_settings_extractions = serializers.ListField(
         child=serializers.CharField(max_length=256, validators=[validate_model]),
         help_text='(required if AI extractions enabled) passed in format provider[:model] e.g. openai:gpt4o. Can pass more than one value to get extractions from multiple providers. model part is optional',
+    )
+    extractions = serializers.ListField(
+        min_length=1,
+        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),
+        help_text="extraction id(s)",
+    )
+    aliases = serializers.ListField(
+        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'alias', ["alias"])]),
+        help_text="alias id(s)",
+        required=False,
+    )
+    whitelists = serializers.ListField(
+        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'whitelist', ["whitelist"])]),
+        help_text="whitelist id(s)",
+        required=False,
     )
 
     class Meta:

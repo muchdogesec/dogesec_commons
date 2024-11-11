@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+import os
 from pathlib import Path
 import shutil
 import uuid
@@ -12,7 +13,7 @@ import tempfile
 from file2txt.converter import get_parser_class
 from txt2stix import txt2stix
 from txt2stix.stix import txt2stixBundler
-from txt2stix.ai_session import GenericAIExtractor
+from txt2stix.ai_extractor import BaseAIExtractor
 from stix2arango.stix2arango import Stix2Arango
 from django.conf import settings
 
@@ -107,14 +108,16 @@ class StixifyProcessor:
         aliased_input = txt2stix.aliases.transform_all(aliases.values(), input_text)
         bundler.whitelisted_values = txt2stix.lookups.merge_whitelists(whitelists.values())
 
-        ai_extractor_session = GenericAIExtractor.openai()
-        all_extracts = txt2stix.extract_all(bundler, extractors_map, aliased_input, ai_extractor=ai_extractor_session)
+
+        ai_extractors = [txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
+        txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, aliased_input, ai_extractors)
+
+        all_extracts = txt2stix.extract_all(bundler, extractors_map, aliased_input, ai_extractors=ai_extractors)
  
         if self.profile.relationship_mode == models.RelationshipMode.AI and sum(map(lambda x: len(x), all_extracts.values())):
-            txt2stix.extract_relationships_with_ai(bundler, aliased_input, all_extracts, ai_extractor_session)
-
-        if ai_extractor_session.initialized:
-            (self.tmpdir/f"conversation_{self.report_id}.md").write_text(ai_extractor_session.get_conversation())
+            ai_ref_extractor = txt2stix.parse_model(self.profile.ai_settings_relationships)
+            txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, aliased_input, [ai_ref_extractor])
+            txt2stix.extract_relationships_with_ai(bundler, aliased_input, all_extracts, ai_ref_extractor)
         return bundler
 
 

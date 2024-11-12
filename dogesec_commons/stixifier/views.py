@@ -18,7 +18,7 @@ import textwrap
 @extend_schema_view(
     list=extend_schema(
         summary="Search profiles",
-        description="Profiles determine how txt2stix processes the text in each File. A profile consists of an extractors, aliases, and/or whitelists. You can search for existing profiles here.",
+        description="Profiles determine how txt2stix processes the text in each File. A profile consists of extractors. You can search for existing profiles here.",
         responses={400: DEFAULT_400_ERROR, 200: ProfileSerializer},
     ),
     retrieve=extend_schema(
@@ -30,12 +30,10 @@ import textwrap
         summary="Create a new profile",
                 description=textwrap.dedent(
             """
-            Add a new Profile that can be applied to new Files. A profile consists of extractors, aliases, and/or whitelists. You can find available extractors, aliases, and whitelists via their respective endpoints.\n\n
+            Add a new Profile that can be applied to new Files. A profile consists of extractors. You can find available extractors via their respective endpoints.\n\n
             The following key/values are accepted in the body of the request:\n\n
             * `name` (required - must be unique)
             * `extractions` (required - at least one extraction ID): can be obtained from the GET Extractors endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `whitelists` (optional): can be obtained from the GET Whitelists endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `aliases` (optional): can be obtained from the GET Whitelists endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `relationship_mode` (required): either `ai` or `standard`. Required AI provider to be configured if using `ai` mode. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_settings_extractions` (required if AI extraction used): A list of AI providers and models to be used for extraction in format `["provider:model","provider:model"]` e.g. `["openai:gpt-4o"]`.
             * `ai_settings_relationships` (required if AI relationship used): An AI provider and models to be used for relationship generation in format `"provider:model"` e.g. `"openai:gpt-4o"`.

@@ -71,16 +71,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),
         help_text="extraction id(s)",
     )
-    aliases = serializers.ListField(
-        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'alias', ["alias"])]),
-        help_text="alias id(s)",
-        required=False,
-    )
-    whitelists = serializers.ListField(
-        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'whitelist', ["whitelist"])]),
-        help_text="whitelist id(s)",
-        required=False,
-    )
 
     class Meta:
         model = Profile

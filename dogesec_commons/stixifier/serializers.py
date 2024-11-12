@@ -64,6 +64,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     ai_settings_extractions = serializers.ListField(
         child=serializers.CharField(max_length=256, validators=[validate_model]),
         help_text='(required if AI extractions enabled) passed in format provider[:model] e.g. openai:gpt4o. Can pass more than one value to get extractions from multiple providers. model part is optional',
+        required=False,
     )
     extractions = serializers.ListField(
         min_length=1,
@@ -86,9 +87,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, attrs):
-        if attrs['relationship_mode'] == 'ai' and not attrs['ai_settings_relationships']:
+        if attrs['relationship_mode'] == 'ai' and not attrs.get('ai_settings_relationships'):
             raise ValidationError('AI `relationship_mode` requires a valid `ai_settings_relationships`')
-        if not attrs['ai_settings_extractions']:
+        if not attrs.get('ai_settings_extractions'):
             uses_ai(attrs['extractions'])
         return super().validate(attrs)
 

@@ -28,8 +28,6 @@ class Profile(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=250, unique=True)
     extractions = ArrayField(base_field=models.CharField(max_length=256))
-    whitelists  = ArrayField(base_field=models.CharField(max_length=256), default=list)
-    aliases     = ArrayField(base_field=models.CharField(max_length=256), default=list)
     relationship_mode = models.CharField(choices=RelationshipMode.choices, max_length=20, default=RelationshipMode.STANDARD)
     extract_text_from_image = models.BooleanField(default=False)
     defang = models.BooleanField(help_text='If the text should be defanged before processing')

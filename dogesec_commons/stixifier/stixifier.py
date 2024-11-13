@@ -88,8 +88,7 @@ class StixifyProcessor:
                 extractors_map[extractor.type][extractor.slug] = extractor
             else:
                 extractors_map[extractor.type] = {extractor.slug: extractor}
-        aliases = all_extractors(self.profile.aliases)
-        whitelists = all_extractors(self.profile.whitelists)
+
 
         bundler = txt2stixBundler(
             self.report_prop.name,
@@ -105,19 +104,17 @@ class StixifyProcessor:
         )
         self.extra_data['_stixify_report_id'] = str(bundler.report.id)
         input_text = txt2stix.remove_data_images(self.output_md)
-        aliased_input = txt2stix.aliases.transform_all(aliases.values(), input_text)
-        bundler.whitelisted_values = txt2stix.lookups.merge_whitelists(whitelists.values())
 
 
         ai_extractors = [txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
-        txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, aliased_input, ai_extractors)
+        txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, ai_extractors)
 
-        all_extracts = txt2stix.extract_all(bundler, extractors_map, aliased_input, ai_extractors=ai_extractors)
+        all_extracts = txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors)
  
         if self.profile.relationship_mode == models.RelationshipMode.AI and sum(map(lambda x: len(x), all_extracts.values())):
             ai_ref_extractor = txt2stix.parse_model(self.profile.ai_settings_relationships)
-            txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, aliased_input, [ai_ref_extractor])
-            txt2stix.extract_relationships_with_ai(bundler, aliased_input, all_extracts, ai_ref_extractor)
+            txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, [ai_ref_extractor])
+            txt2stix.extract_relationships_with_ai(bundler, input_text, all_extracts, ai_ref_extractor)
         return bundler
 
 

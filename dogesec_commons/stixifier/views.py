@@ -18,7 +18,7 @@ import textwrap
 @extend_schema_view(
     list=extend_schema(
         summary="Search profiles",
-        description="Profiles determine how txt2stix processes the text in each File. A profile consists of an extractors, aliases, and/or whitelists. You can search for existing profiles here.",
+        description="Profiles determine how txt2stix processes the text in each File. A profile consists of extractors. You can search for existing profiles here.",
         responses={400: DEFAULT_400_ERROR, 200: ProfileSerializer},
     ),
     retrieve=extend_schema(
@@ -30,12 +30,10 @@ import textwrap
         summary="Create a new profile",
                 description=textwrap.dedent(
             """
-            Add a new Profile that can be applied to new Files. A profile consists of extractors, aliases, and/or whitelists. You can find available extractors, aliases, and whitelists via their respective endpoints.\n\n
+            Add a new Profile that can be applied to new Files. A profile consists of extractors. You can find available extractors via their respective endpoints.\n\n
             The following key/values are accepted in the body of the request:\n\n
             * `name` (required - must be unique)
             * `extractions` (required - at least one extraction ID): can be obtained from the GET Extractors endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `whitelists` (optional): can be obtained from the GET Whitelists endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `aliases` (optional): can be obtained from the GET Whitelists endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `relationship_mode` (required): either `ai` or `standard`. Required AI provider to be configured if using `ai` mode. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_settings_extractions` (required if AI extraction used): A list of AI providers and models to be used for extraction in format `["provider:model","provider:model"]` e.g. `["openai:gpt-4o"]`.
             * `ai_settings_relationships` (required if AI relationship used): An AI provider and models to be used for relationship generation in format `"provider:model"` e.g. `"openai:gpt-4o"`.
@@ -144,65 +142,3 @@ class ExtractorsView(txt2stixView):
 
     def get_all(self):
         return self.all_extractors(["lookup", "pattern", "ai"])
-
-@extend_schema_view(
-    list=extend_schema(
-        summary="Search for Whitelists",
-        description=textwrap.dedent(
-            """
-            In many cases files will have IoC extractions that are not malicious. e.g. `google.com` (and thus they don't want them to be extracted). Whitelists provide a list of values to be compared to extractions. If a whitelist value matches an extraction, that extraction is removed. To see the values used in this Whitelist, visit the URL shown as the value for the `file` key.\n\n
-            For more information see [txt2stix](https://github.com/muchdogesec/txt2stix/).
-            """
-        ),
-        responses={400: DEFAULT_400_ERROR, 200: Txt2stixExtractorSerializer},
-    ),
-    retrieve=extend_schema(
-        summary="Get a whitelist",
-        description="Get a specific Whitelist. To see the values used in this Whitelist, visit the URL shown as the value for the `file` key",
-        responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: Txt2stixExtractorSerializer},
-    ),
-)
-class WhitelistsView(txt2stixView):
-    lookup_url_kwarg = "whitelist_id"
-    openapi_path_params = [
-        OpenApiParameter(
-            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.UUID, description="The `id` of the Whitelist."
-        )
-    ]
-    openapi_tags = ["Whitelists"]
-    pagination_class = Pagination("whitelists")
-
-    def get_all(self):
-        return self.all_extractors(["whitelist"])
-
-@extend_schema_view(
-    list=extend_schema(
-        summary="Search for aliases",
-        description=textwrap.dedent(
-            """
-            Aliases replace strings in the blog post with values defined in the Alias. Aliases are applied before extractions. For example, an alias of `USA` with a value `United States` will change all records of `USA` in the blog post with `United States`. To see the values used in this Alias, visit the URL shown as the value for the `file` key\n\n
-            For more information see [txt2stix](https://github.com/muchdogesec/txt2stix/).
-            """
-        ),
-        responses={400: DEFAULT_400_ERROR, 200: Txt2stixExtractorSerializer},
-    ),
-    retrieve=extend_schema(
-        summary="Get an Alias",
-        description="Get a specific Alias. To see the values used in this Alias, visit the URL shown as the value for the `file` key",
-        responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: Txt2stixExtractorSerializer},
-    ),
-)
-class AliasesView(txt2stixView):
-    openapi_tags = ["Aliases"]
-    pagination_class = Pagination("aliases")
-
-    lookup_url_kwarg = "alias_id"
-
-    openapi_path_params = [
-        OpenApiParameter(
-            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.UUID, description="The `id` of the Alias."
-        )
-    ]
-
-    def get_all(self):
-        return self.all_extractors(["alias"])

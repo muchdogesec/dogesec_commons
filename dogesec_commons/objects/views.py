@@ -167,6 +167,14 @@ class QueryParams:
         OpenApiParameter('sort', enum=SMO_SORT_FIELDS),
     ]
 
+    object_id_param = OpenApiParameter(
+        'object_id',
+        description="Filter by the STIX object ID. e.g. `ipv4-addr--ba6b3f21-d818-4e7c-bfff-765805177512`, `indicator--7bff059e-6963-4b50-b901-4aba20ce1c01`",
+        type=OpenApiTypes.STR, location=OpenApiParameter.PATH
+    )
+
+
+
 @extend_schema_view(
     retrieve=extend_schema(
         summary="Get a STIX Object",
@@ -175,16 +183,14 @@ class QueryParams:
             Get a STIX Object by its ID
             """
         ),
+        responses=ArangoDBHelper.get_paginated_response_schema(),
+        parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
     )
 )
 class SingleObjectView(viewsets.ViewSet):
     lookup_url_kwarg = "object_id"
     openapi_tags = ["Objects"]
 
-    @extend_schema(
-        responses=ArangoDBHelper.get_paginated_response_schema(),
-        parameters=ArangoDBHelper.get_schema_operation_parameters(),
-    )
     def retrieve(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request).get_objects_by_id(
             kwargs.get(self.lookup_url_kwarg)
@@ -193,7 +199,7 @@ class SingleObjectView(viewsets.ViewSet):
 @extend_schema_view(
     reports=extend_schema(
         responses=ArangoDBHelper.get_paginated_response_schema('reports', {'type': 'string'}),
-        parameters=ArangoDBHelper.get_schema_operation_parameters(),
+        parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
         summary="Get all Reports that references STIX ID",
         description=textwrap.dedent(
             """

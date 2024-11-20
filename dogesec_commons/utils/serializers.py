@@ -4,6 +4,9 @@ from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
+
 
 
 class RelatedObjectField(serializers.RelatedField):
@@ -32,3 +35,13 @@ class RelatedObjectField(serializers.RelatedField):
         
     def to_representation(self, value):
         return self.internal_serializer.to_representation(value)
+
+
+@extend_schema_field(OpenApiTypes.ANY)
+class AnyField(serializers.Field):
+    pass
+
+class CommonErrorSerializer(serializers.Serializer):
+    message = serializers.CharField(required=False)
+    code    = serializers.IntegerField(required=True)
+    details = serializers.JSONField(required=False)

@@ -135,7 +135,7 @@ class ExtractorsView(txt2stixView):
     lookup_url_kwarg = "extractor_id"
     openapi_path_params = [
         OpenApiParameter(
-            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.UUID, description="The `id` of the Extractor."
+            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.STR, description="The `id` of the Extractor."
         )
     ]
     pagination_class = Pagination("extractors")

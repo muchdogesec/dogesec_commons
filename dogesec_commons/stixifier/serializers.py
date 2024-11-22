@@ -116,14 +116,14 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     id = serializers.CharField(label='The `id` of the extractor')
     name = serializers.CharField()
     type = serializers.CharField()
-    description = serializers.CharField(required=False)
-    notes = serializers.CharField(required=False)
-    file = serializers.CharField(required=False)
-    created = serializers.CharField(required=False)
-    modified = serializers.CharField(required=False)
-    created_by = serializers.CharField(required=False)
+    description = serializers.CharField(required=False, allow_null=True)
+    notes = serializers.CharField(required=False, allow_null=True)
+    file = serializers.CharField(required=False, allow_null=True)
+    created = serializers.CharField(required=False, allow_null=True)
+    modified = serializers.CharField(required=False, allow_null=True)
+    created_by = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField()
-    stix_mapping = serializers.CharField(required=False)
+    stix_mapping = serializers.CharField(required=False, allow_null=True)
 
     @classmethod
     def all_extractors(cls, types):

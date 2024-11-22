@@ -1,9 +1,11 @@
+import contextlib
 import typing, re
 from arango import ArangoClient
 from django.conf import settings
 from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiParameter
 from ..utils.pagination import Pagination
+from rest_framework.exceptions import ValidationError
 
 from . import conf
 
@@ -98,6 +100,19 @@ SMO_TYPES = set([
 
 OBJECT_TYPES = SDO_TYPES.union(SCO_TYPES).union(["relationship"]).union(SMO_TYPES)
 
+def positive_int(integer_string, cutoff=None, default=1):
+    """
+    Cast a string to a strictly positive integer.
+    """
+    with contextlib.suppress(ValueError, TypeError):
+        ret = int(integer_string)
+        if ret <= 0:
+            return default
+        if cutoff:
+            return min(ret, cutoff)
+        return ret
+    return default
+
 class ArangoDBHelper:
     max_page_size = conf.MAXIMUM_PAGE_SIZE
     page_size = conf.DEFAULT_PAGE_SIZE
@@ -127,19 +142,19 @@ class ArangoDBHelper:
     @classmethod
     def get_page_params(cls, request):
         kwargs = request.GET.copy()
-        page_number = int(kwargs.get('page', 1))
-        page_limit  = min(int(kwargs.get('page_size', ArangoDBHelper.page_size)), ArangoDBHelper.max_page_size)
+        page_number = positive_int(kwargs.get('page'))
+        page_limit = positive_int(kwargs.get('page_size'), cutoff=ArangoDBHelper.max_page_size, default=ArangoDBHelper.page_size)
         return page_number, page_limit
 
     @classmethod
-    def get_paginated_response(cls, data, page_number, page_size=page_size, full_count=0):
+    def get_paginated_response(cls, data, page_number, page_size=page_size, full_count=0, result_key="objects"):
         return Response(
             {
                 "page_size": page_size or cls.page_size,
                 "page_number": page_number,
                 "page_results_count": len(data),
                 "total_results_count": full_count,
-                "objects": data,
+                result_key: data,
             }
         )
 
@@ -183,6 +198,20 @@ class ArangoDBHelper:
                         }
                     }
                 }
+            },
+            400: {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "code",
+                ]
             }
         }
 
@@ -210,13 +239,14 @@ class ArangoDBHelper:
     )
     DB_NAME = conf.DB_NAME
 
-    def __init__(self, collection, request) -> None:
+    def __init__(self, collection, request, result_key="objects") -> None:
         self.collection = collection
         self.db = self.client.db(
             self.DB_NAME,
             username=settings.ARANGODB_USERNAME,
             password=settings.ARANGODB_PASSWORD,
         )
+        self.result_key = result_key
         self.page, self.count = self.get_page_params(request)
         self.request = request
         self.query = request.query_params.dict()
@@ -226,11 +256,13 @@ class ArangoDBHelper:
             bind_vars['offset'], bind_vars['count'] = self.get_offset_and_count(self.count, self.page)
         cursor = self.db.aql.execute(query, bind_vars=bind_vars, count=True, full_count=True)
         if paginate:
-            return self.get_paginated_response(cursor, self.page, self.page_size, cursor.statistics()["fullCount"])
+            return self.get_paginated_response(cursor, self.page, self.page_size, cursor.statistics()["fullCount"], result_key=self.result_key)
         return list(cursor)
 
     def get_offset_and_count(self, count, page) -> tuple[int, int]:
         page = page or 1
+        if page >= 2**32:
+            raise ValidationError(f"invalid page `{page}`")
         offset = (page-1)*count
         return offset, count
     
@@ -357,7 +389,7 @@ class ArangoDBHelper:
         other_filters = []
         if term := self.query.get('labels'):
             bind_vars['labels'] = term
-            other_filters.append("COUNT(doc.labels[* CONTAINS(CURRENT, @labels)]) != 0")
+            other_filters.append("doc.labels[? ANY FILTER CONTAINS(CURRENT, @labels)]")
 
         if term := self.query.get('name'):
             bind_vars['name'] = term

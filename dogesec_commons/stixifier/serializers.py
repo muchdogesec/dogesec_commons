@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from rest_framework.validators import ValidationError
-
+from dogesec_commons.utils.serializers import CommonErrorSerializer
 
 from drf_spectacular.utils import OpenApiResponse, OpenApiExample
 
@@ -19,10 +19,6 @@ from drf_spectacular.utils import OpenApiResponse, OpenApiExample
 
 from django.db import models
 
-class ErrorSerializer(serializers.Serializer):
-    message = serializers.CharField(required=True)
-    code    = serializers.IntegerField(required=True)
-    details = serializers.DictField(required=False)
 
 def validate_model(model):
     if not model:
@@ -86,7 +82,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 DEFAULT_400_ERROR = OpenApiResponse(
-    ErrorSerializer,
+    CommonErrorSerializer,
     "The server did not understand the request",
     [
         OpenApiExample(
@@ -98,7 +94,7 @@ DEFAULT_400_ERROR = OpenApiResponse(
 
 
 DEFAULT_404_ERROR = OpenApiResponse(
-    ErrorSerializer,
+    CommonErrorSerializer,
     "Resource not found",
     [
         OpenApiExample(
@@ -120,14 +116,14 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     id = serializers.CharField(label='The `id` of the extractor')
     name = serializers.CharField()
     type = serializers.CharField()
-    description = serializers.CharField()
-    notes = serializers.CharField()
-    file = serializers.CharField()
-    created = serializers.CharField()
-    modified = serializers.CharField()
-    created_by = serializers.CharField()
+    description = serializers.CharField(required=False, allow_null=True)
+    notes = serializers.CharField(required=False, allow_null=True)
+    file = serializers.CharField(required=False, allow_null=True)
+    created = serializers.CharField(required=False, allow_null=True)
+    modified = serializers.CharField(required=False, allow_null=True)
+    created_by = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField()
-    stix_mapping = serializers.CharField()
+    stix_mapping = serializers.CharField(required=False, allow_null=True)
 
     @classmethod
     def all_extractors(cls, types):

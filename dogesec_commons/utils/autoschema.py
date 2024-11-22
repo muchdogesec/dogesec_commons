@@ -1,6 +1,12 @@
 from typing import List
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.plumbing import ComponentRegistry
+from drf_spectacular.utils import _SchemaType, OpenApiResponse, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 import uritemplate
+
+from dogesec_commons.utils import schemas
+from .serializers import CommonErrorSerializer
 
 from drf_spectacular.contrib.django_filters import DjangoFilterExtension, get_view_model
 class OverrideDjangoFilterExtension(DjangoFilterExtension):
@@ -8,12 +14,14 @@ class OverrideDjangoFilterExtension(DjangoFilterExtension):
     def get_schema_operation_parameters(self, auto_schema: AutoSchema, *args, **kwargs):
         model = get_view_model(auto_schema.view)
         if not model:
-            return self.override(auto_schema)
+            return self.override(auto_schema, *args, **kwargs)
         return super().get_schema_operation_parameters(auto_schema, *args, **kwargs)
     
-    def override(self, autoschema):
+    def override(self, autoschema, *args, **kwargs):
         result = []
         filterset_class = self.target.get_filterset_class(autoschema.view)
+        if not filterset_class:
+            return self.target.get_schema_operation_parameters(autoschema.view, *args, **kwargs)
         for field_name, filter_field in filterset_class.base_filters.items():
             result += self.resolve_filter_field(
                 autoschema, None, filterset_class, field_name, filter_field
@@ -46,3 +54,27 @@ class CustomAutoSchema(AutoSchema):
         if getattr(serializer, "get_schema", None):
             return serializer.get_schema()
         return super()._map_serializer(serializer, direction, bypass_extensions)
+    
+
+    def get_operation(self, *args, **kwargs):
+        operation = super().get_operation(*args, **kwargs)
+        if operation:
+            self.add_default_pages(operation)
+        return operation
+
+    def add_default_pages(self, operation):
+        """
+        modify responses to include 404 error for when path parameters don't match specified path. e.g if integer passed instead of a uuid param
+        """
+        responses = operation['responses']
+
+        default_responses = {
+            '404': self._get_response_for_code(schemas.WEBSERVER_404_RESPONSE, '404', ["text/html"]),
+            '500': self._get_response_for_code(schemas.WEBSERVER_500_RESPONSE, '500', ["text/html"]),
+        }
+        for code, content_response in default_responses.items():
+            if code in responses:
+                responses[code]['content'].update(content_response['content'])
+            else:
+                responses[code] = content_response
+        return operation

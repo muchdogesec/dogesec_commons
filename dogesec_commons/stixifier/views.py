@@ -12,6 +12,7 @@ from .serializers import ProfileSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 import textwrap
+EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
 
 
 
@@ -140,5 +141,18 @@ class ExtractorsView(txt2stixView):
     ]
     pagination_class = Pagination("extractors")
 
+
+    class filterset_class(FilterSet):
+        type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="filter extractors by type")
+        name = Filter(help_text="filter extractors by name (is wildcard)")
+
     def get_all(self):
-        return self.all_extractors(["lookup", "pattern", "ai"])
+        types = EXTRACTOR_TYPES
+        if type := self.request.GET.get('type'):
+            types = type.split(',')
+
+        extractors = self.all_extractors(types)
+
+        if name := self.request.GET.get('name', '').lower():
+            extractors = {slug: extractor for slug, extractor in extractors.items() if name in extractor['name'].lower()}
+        return extractors

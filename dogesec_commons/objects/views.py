@@ -214,25 +214,6 @@ class ObjectsWithReportsView(SingleObjectView):
     def reports(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request, 'reports').get_containing_reports(kwargs.get(self.lookup_url_kwarg))
     
-
-class NoListView(viewsets.ViewSet):
-    """
-    The purpose of this viewset is to hide list action from drf_spectacular so it doesn't ruin thee schema
-    """
-    @property
-    def action(self):
-        action = self._action
-        if action == 'list':
-            return 'list_objects'
-        return action
-    
-    @property
-    def list_objects(self):
-        return self.list
-    
-    @action.setter
-    def action(self, value):
-        self._action = value
    
 @extend_schema_view(
     list=extend_schema(
@@ -247,7 +228,8 @@ class NoListView(viewsets.ViewSet):
         ),
     ),
 )
-class SDOView(NoListView):
+class SDOView(viewsets.ViewSet):
+    skip_list_view = True
     openapi_tags = ["Objects"]
     def list(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request).get_sdos()
@@ -292,7 +274,8 @@ class SDOView(NoListView):
         ),
     ),
 )
-class SCOView(NoListView):
+class SCOView(viewsets.ViewSet):
+    skip_list_view = True
     openapi_tags = ["Objects"]
     def list(self, request, *args, **kwargs):
         matcher = {}
@@ -314,7 +297,8 @@ class SCOView(NoListView):
         ),
     )
 )
-class SMOView(NoListView):
+class SMOView(viewsets.ViewSet):
+    skip_list_view = True
     openapi_tags = ["Objects"]
     def list(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request).get_smos()
@@ -333,7 +317,8 @@ class SMOView(NoListView):
             ),
         ),
 )
-class SROView(NoListView):
+class SROView(viewsets.ViewSet):
+    skip_list_view = True
     openapi_tags = ["Objects"]
     def list(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request).get_sros()

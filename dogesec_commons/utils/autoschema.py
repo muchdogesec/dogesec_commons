@@ -78,3 +78,11 @@ class CustomAutoSchema(AutoSchema):
             else:
                 responses[code] = content_response
         return operation
+    
+    def _is_list_view(self, serializer=None) -> bool:
+        if getattr(self.view, 'action', None) == 'list' and getattr(self.view, 'skip_list_view', False):
+            """
+            view.skip_list_view is used for checking if many should be used or not on list() action
+            """
+            return False
+        return super()._is_list_view(serializer)

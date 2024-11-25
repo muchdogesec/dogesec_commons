@@ -12,35 +12,48 @@ from .serializers import ProfileSerializer
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 import textwrap
+
 EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
-
-
 
 @extend_schema_view(
     list=extend_schema(
         summary="Search profiles",
-        description="Profiles determine how txt2stix processes the text in each File. A profile consists of extractors. You can search for existing profiles here.",
+        description=textwrap.dedent(
+            """
+            Profiles determine how txt2stix processes the text in each File. A profile consists of extractors. You can search for existing profiles here.
+            """
+        ),
         responses={400: DEFAULT_400_ERROR, 200: ProfileSerializer},
     ),
     retrieve=extend_schema(
         summary="Get a profile",
-        description="View the configuration of an existing profile. Note, existing profiles cannot be modified.",
+        description=textwrap.dedent(
+            """
+            View the configuration of an existing profile. Note, existing profiles cannot be modified.
+            """
+        ),
         responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: ProfileSerializer}
     ),
     create=extend_schema(
         summary="Create a new profile",
-                description=textwrap.dedent(
+        description=textwrap.dedent(
             """
-            Add a new Profile that can be applied to new Files. A profile consists of extractors. You can find available extractors via their respective endpoints.\n\n
-            The following key/values are accepted in the body of the request:\n\n
+            Add a new Profile that can be applied to new Files. A profile consists of extractors. You can find available extractors via their respective endpoints.
+
+            The following key/values are accepted in the body of the request:
+
             * `name` (required - must be unique)
             * `extractions` (required - at least one extraction ID): can be obtained from the GET Extractors endpoint. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `relationship_mode` (required): either `ai` or `standard`. Required AI provider to be configured if using `ai` mode. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `ai_settings_extractions` (required if AI extraction used): A list of AI providers and models to be used for extraction in format `["provider:model","provider:model"]` e.g. `["openai:gpt-4o"]`.
-            * `ai_settings_relationships` (required if AI relationship used): An AI provider and models to be used for relationship generation in format `"provider:model"` e.g. `"openai:gpt-4o"`.
+            * `ai_settings_extractions` (required if AI extraction used): A list of AI providers and models to be used for extraction in format `["provider:model","provider:model"]` e.g. `["openai:gpt-4o"]`. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+            * `ai_settings_relationships` (required if AI relationship used): An AI provider and models to be used for relationship generation in format `"provider:model"` e.g. `"openai:gpt-4o"`. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `extract_text_from_image` (required - boolean): wether to convert the images found in a blog to text. Requires a Google Vision key to be set. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
-            * `defang` (required - boolean): wether to defang the observables in the blog. e.g. turns `1.1.1[.]1` to `1.1.1.1` for extraction. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.\n\n
+            * `defang` (required - boolean): wether to defang the observables in the blog. e.g. turns `1.1.1[.]1` to `1.1.1.1` for extraction. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
+            * `ignore_image_refs` (optional, default `true`): wether to ignore embedded image references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+            * `ignore_link_refs` (optional, default `true`): wether to ignore embedded link references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+
             A profile `id` is generated using a UUIDv5. The namespace used is `e92c648d-03eb-59a5-a318-9a36e6f8057c`, and the `name` is used as the value (e.g `my profile` would have the `id`: `9d9041f7-e535-5daa-972f-71cd20fb3855`).
+
             You cannot modify a profile once it is created. If you need to make changes, you should create another profile with the changes made. If it is essential that the same `name` value be used, then you must first delete the profile in order to recreate it.
             """
         ),
@@ -127,7 +140,11 @@ class txt2stixView(mixins.RetrieveModelMixin,
     ),
     retrieve=extend_schema(
         summary="Get an extractor",
-        description="Get a specific Extractor.",
+        description=textwrap.dedent(
+            """
+            Get a specific Extractor.
+            """
+        ),
         responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: Txt2stixExtractorSerializer},
     ),
 )
@@ -143,7 +160,7 @@ class ExtractorsView(txt2stixView):
 
 
     class filterset_class(FilterSet):
-        type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="filter extractors by type")
+        type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="Filter Extractors by their `type`")
         name = Filter(help_text="filter extractors by name (is wildcard)")
 
     def get_all(self):

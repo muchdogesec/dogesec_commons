@@ -33,6 +33,8 @@ class Profile(models.Model):
     defang = models.BooleanField(help_text='If the text should be defanged before processing')
     ai_settings_relationships = models.CharField(max_length=256, blank=False, null=True)
     ai_settings_extractions = ArrayField(base_field=models.CharField(max_length=256), default=list)
+    ignore_image_refs = models.BooleanField(default=True)
+    ignore_link_refs  = models.BooleanField(default=True)
 
     class Meta:
         app_label = settings.APP_LABEL

@@ -20,6 +20,7 @@ from django.conf import settings
 
 from file2txt.converter import Fanger, get_parser_class
 from file2txt.parsers.core import BaseParser
+import txt2stix.utils
 
 
 def all_extractors(names, _all=False):
@@ -103,7 +104,7 @@ class StixifyProcessor:
             **self.report_prop.kwargs,
         )
         self.extra_data['_stixify_report_id'] = str(bundler.report.id)
-        input_text = txt2stix.remove_data_images(self.output_md)
+        input_text = txt2stix.utils.remove_links(self.output_md, self.profile.ignore_image_refs, self.profile.ignore_link_refs)
 
 
         ai_extractors = [txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]

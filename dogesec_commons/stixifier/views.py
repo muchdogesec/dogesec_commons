@@ -87,16 +87,12 @@ class ProfileView(viewsets.ModelViewSet):
 
     class filterset_class(FilterSet):
         name = Filter(
-            label="Searches Profiles by their name. Search is wildcard. For example, `ip` will return Profiles with names `ip-extractions`, `ips`, etc.",
+            label="Searches Profiles by their `name`. Search is wildcard. For example, `ip` will return Profiles with names `ip-extractions`, `ips`, etc.",
             lookup_expr="search"
             )
 
     def get_queryset(self):
         return Profile.objects
-
-
-##
-
 
 class txt2stixView(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -132,7 +128,8 @@ class txt2stixView(mixins.RetrieveModelMixin,
         summary="Search Extractors",
         description=textwrap.dedent(
             """
-            Extractors are what extract the data from the text which is then converted into STIX objects.\n\n
+            Extractors are what extract the data from the text which is then converted into STIX objects.
+
             For more information see [txt2stix](https://github.com/muchdogesec/txt2stix/).
             """
         ),
@@ -162,7 +159,7 @@ class ExtractorsView(txt2stixView):
 
     class filterset_class(FilterSet):
         type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="Filter Extractors by their `type`")
-        name = Filter(help_text="filter extractors by name (is wildcard)")
+        name = Filter(help_text="Filter extractors by `name`. Is wildcard search so `ip` will return `ipv4`, `ipv6`, etc.)")
 
     def get_all(self):
         types = EXTRACTOR_TYPES

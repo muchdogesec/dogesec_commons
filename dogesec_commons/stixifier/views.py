@@ -3,14 +3,14 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from ..utils import Pagination, Ordering
 
-from rest_framework import viewsets, response, mixins
+from rest_framework import viewsets, response, mixins, exceptions
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter
 from .serializers import DEFAULT_400_ERROR, DEFAULT_404_ERROR, Txt2stixExtractorSerializer
 
 from .serializers import ProfileSerializer
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
-
+import django.db.models.deletion
 import textwrap
 
 EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
@@ -94,6 +94,12 @@ class ProfileView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Profile.objects
+    
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except django.db.models.deletion.ProtectedError as e:
+            raise exceptions.PermissionDenied({'message': "cannot delete Profile because  they are referenced through protected foreign keys.", 'details': {'protected_objects': [str(f) for f in e.protected_objects]}})
 
 class txt2stixView(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin, viewsets.GenericViewSet):

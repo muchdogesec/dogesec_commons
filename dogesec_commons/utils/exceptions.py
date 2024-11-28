@@ -1,6 +1,7 @@
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import ValidationError
 from django.core import exceptions as django_exceptions
+from django.http import JsonResponse
 
 
 
@@ -20,4 +21,5 @@ def custom_exception_handler(exc, context):
         else:
             resp.data = dict(code=resp.status_code, details=resp.data)
         resp.data.setdefault('message', resp.status_text)
+        resp = JsonResponse(data=resp.data, status=resp.status_code)
     return resp

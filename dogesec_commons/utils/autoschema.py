@@ -69,13 +69,10 @@ class CustomAutoSchema(AutoSchema):
         responses = operation['responses']
 
         default_responses = {
-            '404': self._get_response_for_code(schemas.WEBSERVER_404_RESPONSE, '404', ["text/html"]),
-            '500': self._get_response_for_code(schemas.WEBSERVER_500_RESPONSE, '500', ["text/html"]),
+            '404': self._get_response_for_code(schemas.WEBSERVER_404_RESPONSE, '404', ["application/json"]),
         }
         for code, content_response in default_responses.items():
-            if code in responses:
-                responses[code]['content'].update(content_response['content'])
-            else:
+            if code not in responses:
                 responses[code] = content_response
         return operation
     

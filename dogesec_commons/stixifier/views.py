@@ -64,7 +64,9 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
         summary="Delete a profile",
         description=textwrap.dedent(
             """
-            Delete an existing profile. Note, we would advise against deleting a Profile because any Files it has been used with will still refer to this ID. If it is deleted, you will not be able to see the profile settings used. Instead, it is usually better to just recreate a Profile with a new name.
+            Delete an existing profile.
+
+            Note: it is not currently possible to delete a profile that is referenced in an existing object.
             """
         ),
         responses={404: DEFAULT_404_ERROR, 204: None}

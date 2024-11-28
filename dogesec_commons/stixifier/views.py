@@ -3,14 +3,14 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from ..utils import Pagination, Ordering
 
-from rest_framework import viewsets, response, mixins
+from rest_framework import viewsets, response, mixins, exceptions
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter
 from .serializers import DEFAULT_400_ERROR, DEFAULT_404_ERROR, Txt2stixExtractorSerializer
 
 from .serializers import ProfileSerializer
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
-
+import django.db.models.deletion
 import textwrap
 
 EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
@@ -47,10 +47,10 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             * `relationship_mode` (required): either `ai` or `standard`. Required AI provider to be configured if using `ai` mode. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_settings_extractions` (required if AI extraction used): A list of AI providers and models to be used for extraction in format `["provider:model","provider:model"]` e.g. `["openai:gpt-4o"]`. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_settings_relationships` (required if AI relationship used): An AI provider and models to be used for relationship generation in format `"provider:model"` e.g. `"openai:gpt-4o"`. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `extract_text_from_image` (required - boolean): wether to convert the images found in a blog to text. Requires a Google Vision key to be set. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
-            * `defang` (required - boolean): wether to defang the observables in the blog. e.g. turns `1.1.1[.]1` to `1.1.1.1` for extraction. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
-            * `ignore_image_refs` (optional, default `true`): wether to ignore embedded image references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
-            * `ignore_link_refs` (optional, default `true`): wether to ignore embedded link references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+            * `extract_text_from_image` (required - boolean): whether to convert the images found in a blog to text. Requires a Google Vision key to be set. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
+            * `defang` (required - boolean): whether to defang the observables in the blog. e.g. turns `1.1.1[.]1` to `1.1.1.1` for extraction. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
+            * `ignore_image_refs` (optional, default `true`): whether to ignore embedded image references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+            * `ignore_link_refs` (optional, default `true`): whether to ignore embedded link references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_summary_provider` (optional): you can also generate a summary of the files this profile is linked to using an AI model. If not passed, no summmary will be generated. Pass in format `"provider:model"` e.g. `"openai:gpt-4o"`.
 
             A profile `id` is generated using a UUIDv5. The namespace used is `e92c648d-03eb-59a5-a318-9a36e6f8057c`, and the `name` is used as the value (e.g `my profile` would have the `id`: `9d9041f7-e535-5daa-972f-71cd20fb3855`).
@@ -64,7 +64,9 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
         summary="Delete a profile",
         description=textwrap.dedent(
             """
-            Delete an existing profile. Note, we would advise against deleting a Profile because any Files it has been used with will still refer to this ID. If it is deleted, you will not be able to see the profile settings used. Instead, it is usually better to just recreate a Profile with a new name.
+            Delete an existing profile.
+
+            Note: it is not currently possible to delete a profile that is referenced in an existing object. You must delete the objects linked to the profile first.
             """
         ),
         responses={404: DEFAULT_404_ERROR, 204: None}
@@ -94,7 +96,7 @@ class ProfileView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Profile.objects
-
+    
 class txt2stixView(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = Txt2stixExtractorSerializer

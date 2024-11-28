@@ -95,12 +95,6 @@ class ProfileView(viewsets.ModelViewSet):
     def get_queryset(self):
         return Profile.objects
     
-    def destroy(self, request, *args, **kwargs):
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except django.db.models.deletion.ProtectedError as e:
-            raise exceptions.PermissionDenied({'message': "cannot delete Profile because  they are referenced through protected foreign keys.", 'details': {'protected_objects': [str(f) for f in e.protected_objects]}})
-
 class txt2stixView(mixins.RetrieveModelMixin,
                            mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = Txt2stixExtractorSerializer

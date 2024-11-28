@@ -11,7 +11,7 @@ from ..objects import db_view_creator
 from . import models
 import tempfile
 from file2txt.converter import get_parser_class
-from txt2stix import txt2stix
+from txt2stix import get_include_path
 from txt2stix.stix import txt2stixBundler
 from txt2stix.ai_extractor import BaseAIExtractor
 from stix2arango.stix2arango import Stix2Arango
@@ -21,11 +21,13 @@ from django.conf import settings
 from file2txt.converter import Fanger, get_parser_class
 from file2txt.parsers.core import BaseParser
 import txt2stix.utils
+import txt2stix.txt2stix
+import txt2stix.extractions
 
 
 def all_extractors(names, _all=False):
     retval = {}
-    extractors = txt2stix.extractions.parse_extraction_config(txt2stix.INCLUDES_PATH).values()
+    extractors = txt2stix.extractions.parse_extraction_config(get_include_path()).values()
     for extractor in extractors:
         if _all or extractor.slug in names:
             retval[extractor.slug] = extractor
@@ -107,15 +109,15 @@ class StixifyProcessor:
         input_text = txt2stix.utils.remove_links(self.output_md, self.profile.ignore_image_refs, self.profile.ignore_link_refs)
 
 
-        ai_extractors = [txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
-        txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, ai_extractors)
+        ai_extractors = [txt2stix.txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
+        txt2stix.txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, ai_extractors)
 
-        all_extracts = txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors)
+        all_extracts = txt2stix.txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors)
  
         if self.profile.relationship_mode == models.RelationshipMode.AI and sum(map(lambda x: len(x), all_extracts.values())):
-            ai_ref_extractor = txt2stix.parse_model(self.profile.ai_settings_relationships)
-            txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, [ai_ref_extractor])
-            txt2stix.extract_relationships_with_ai(bundler, input_text, all_extracts, ai_ref_extractor)
+            ai_ref_extractor = txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships)
+            txt2stix.txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, [ai_ref_extractor])
+            txt2stix.txt2stix.extract_relationships_with_ai(bundler, input_text, all_extracts, ai_ref_extractor)
         return bundler
 
 

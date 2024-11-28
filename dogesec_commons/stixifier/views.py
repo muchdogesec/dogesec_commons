@@ -51,6 +51,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             * `defang` (required - boolean): wether to defang the observables in the blog. e.g. turns `1.1.1[.]1` to `1.1.1.1` for extraction. This is a [file2txt](https://github.com/muchdogesec/file2txt) setting.
             * `ignore_image_refs` (optional, default `true`): wether to ignore embedded image references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ignore_link_refs` (optional, default `true`): wether to ignore embedded link references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
+            * `ai_summary_provider` (optional): you can also generate a summary of the files this profile is linked to using an AI model. If not passed, no summmary will be generated. Pass in format `"provider:model"` e.g. `"openai:gpt-4o"`.
 
             A profile `id` is generated using a UUIDv5. The namespace used is `e92c648d-03eb-59a5-a318-9a36e6f8057c`, and the `name` is used as the value (e.g `my profile` would have the `id`: `9d9041f7-e535-5daa-972f-71cd20fb3855`).
 

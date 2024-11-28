@@ -429,10 +429,15 @@ class ArangoDBHelper:
             "id": id,
         }
         query = """
-            FOR doc in @@view
-            FILTER doc.id == @id
+            LET report_ids = (
+                FOR doc in @@view
+                FILTER doc.id == @id
+                RETURN DISTINCT doc._stixify_report_id
+            )
+            FOR report in @@view
+            FILTER report.type == 'report' AND report.id IN report_ids
             LIMIT @offset, @count
-            RETURN DISTINCT doc._stixify_report_id
+            RETURN KEEP(report, KEYS(report, TRUE))
         """
         return self.execute_query(query, bind_vars=bind_vars)
     

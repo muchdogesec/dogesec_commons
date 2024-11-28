@@ -36,6 +36,11 @@ FILTER_FIELDS_EDGE = [
     "relationship_type",
     "_stix2arango_note",
 ]
+FILTER_SCO_FIELDS = [
+    "name",
+    "value",
+    "number",
+]
 FILTER_FIELDS = list(set(FILTER_FIELDS_EDGE + FILTER_FIELDS_VERTEX))
 
 
@@ -59,7 +64,7 @@ def create_view(db: StandardDatabase, view_name):
 
     try:
         return db.create_arangosearch_view(
-            view_name, {"primarySort": primary_sort, "storedValues": [FILTER_FIELDS]}
+            view_name, {"primarySort": primary_sort, "storedValues": [SORT_FIELDS, FILTER_FIELDS_VERTEX, FILTER_FIELDS_EDGE]}
         )
     except arango.exceptions.ViewCreateError as e:
         logging.error(e)

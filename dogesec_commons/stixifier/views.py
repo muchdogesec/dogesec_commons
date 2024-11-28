@@ -157,6 +157,7 @@ class ExtractorsView(txt2stixView):
         )
     ]
     pagination_class = Pagination("extractors")
+    filter_backends = [DjangoFilterBackend]
 
 
     class filterset_class(FilterSet):

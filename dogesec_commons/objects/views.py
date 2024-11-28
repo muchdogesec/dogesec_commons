@@ -199,7 +199,19 @@ class SingleObjectView(viewsets.ViewSet):
     
 @extend_schema_view(
     reports=extend_schema(
-        responses=ArangoDBHelper.get_paginated_response_schema('reports', {'type': 'string'}),
+        responses=ArangoDBHelper.get_paginated_response_schema(
+            'reports', {
+                "type": "object",
+                "properties": {
+                    "type":{
+                        "example": "report",
+                    },
+                    "id": {
+                        "example": "report--a86627d4-285b-5358-b332-4e33f3ec1075",
+                    },
+                },
+                "additionalProperties": True,
+            }),
         parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
         summary="Get all Reports that references STIX ID",
         description=textwrap.dedent(

@@ -117,6 +117,9 @@ class ArangoDBHelper:
     max_page_size = conf.MAXIMUM_PAGE_SIZE
     page_size = conf.DEFAULT_PAGE_SIZE
 
+    @staticmethod
+    def get_like_literal(str: str):
+        return str.replace('_', '\\_').replace('%', '\\%')
     def get_sort_stmt(self, fields: list[str]):
         finder = re.compile(r"(.+)_((a|de)sc)ending")
         sort_field = self.query.get('sort', fields[0])
@@ -342,8 +345,7 @@ class ArangoDBHelper:
             other_filters = "FILTER " + " AND ".join(other_filters)
 
         query = f"""
-            FOR doc in @@collection
-            FILTER CONTAINS(@types, doc.type) AND doc._is_latest
+            FOR doc in @@collection SEARCH doc.type IN @types AND doc._is_latest == TRUE
             {other_filters or ""}
             {self.get_sort_stmt(SCO_SORT_FIELDS)}
 
@@ -365,7 +367,7 @@ class ArangoDBHelper:
         other_filters = {}
         query = f"""
             FOR doc in @@collection
-            FILTER doc.type IN @types AND doc._is_latest
+            SEARCH doc.type IN @types AND doc._is_latest == TRUE
             {other_filters or ""}
             {self.get_sort_stmt(SMO_SORT_FIELDS)}
 
@@ -387,20 +389,21 @@ class ArangoDBHelper:
             "types": list(types),
         }
         other_filters = []
+        search_filters = ['doc._is_latest == TRUE']
         if term := self.query.get('labels'):
             bind_vars['labels'] = term
             other_filters.append("doc.labels[? ANY FILTER CONTAINS(CURRENT, @labels)]")
 
         if term := self.query.get('name'):
-            bind_vars['name'] = term
-            other_filters.append("CONTAINS(doc.name, @name)")
+            bind_vars['name'] = "%" + self.get_like_literal(term) + '%'
+            search_filters.append("LIKE(doc.name, @name)")
 
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
 
         query = f"""
             FOR doc in @@collection
-            FILTER doc.type IN @types AND doc._is_latest
+            SEARCH doc.type IN @types AND {' AND '.join(search_filters)}
             {other_filters or ""}
             {self.get_sort_stmt(SDO_SORT_FIELDS)}
 
@@ -417,7 +420,7 @@ class ArangoDBHelper:
         }
         query = """
             FOR doc in @@view
-            FILTER doc.id == @id AND doc._is_latest
+            SEARCH doc.id == @id AND doc._is_latest == TRUE
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
         """
@@ -435,7 +438,7 @@ class ArangoDBHelper:
                 RETURN DISTINCT doc._stixify_report_id
             )
             FOR report in @@view
-            FILTER report.type == 'report' AND report.id IN report_ids
+            SEARCH report.type == 'report' AND report.id IN report_ids
             LIMIT @offset, @count
             RETURN KEEP(report, KEYS(report, TRUE))
         """
@@ -447,18 +450,10 @@ class ArangoDBHelper:
         }
 
         other_filters = []
-
-        if term := self.query.get('source_ref'):
-            bind_vars['source_ref'] = term
-            other_filters.append('doc.source_ref == @source_ref')
         
         if terms := self.query_as_array('source_ref_type'):
             bind_vars['source_ref_type'] = terms
             other_filters.append('SPLIT(doc.source_ref, "--")[0] IN @source_ref_type')
-        
-        if term := self.query.get('target_ref'):
-            bind_vars['target_ref'] = term
-            other_filters.append('doc.target_ref == @target_ref')
             
         if terms := self.query_as_array('target_ref_type'):
             bind_vars['target_ref_type'] = terms
@@ -468,16 +463,27 @@ class ArangoDBHelper:
             bind_vars['relationship_type'] = term
             other_filters.append("CONTAINS(doc.relationship_type, @relationship_type)")
 
-        bind_vars['include_embedded_refs'] = self.query_as_bool('include_embedded_refs', True)
     
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
         else:
             other_filters = ""
 
+        search_filters = ['doc._is_latest == TRUE']
+        if not self.query_as_bool('include_embedded_refs', True):
+            search_filters.append('doc._is_ref != TRUE')
+
+        if term := self.query.get('target_ref'):
+            bind_vars['target_ref'] = term
+            search_filters.append('doc.target_ref == @target_ref')
+
+        if term := self.query.get('source_ref'):
+            bind_vars['source_ref'] = term
+            search_filters.append('doc.source_ref == @source_ref')
+
         query = f"""
             FOR doc in @@collection
-            FILTER doc.type == 'relationship' AND doc._is_latest AND (NOT doc._is_ref OR @include_embedded_refs)
+            SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
             {other_filters}
             {self.get_sort_stmt(SRO_SORT_FIELDS)}
 

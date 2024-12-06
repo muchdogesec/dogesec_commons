@@ -30,6 +30,9 @@ class OverrideDjangoFilterExtension(DjangoFilterExtension):
 
 
 class CustomAutoSchema(AutoSchema):
+    default_responses = {
+            '404': (schemas.WEBSERVER_404_RESPONSE, ["application/json"]),
+    }
     def get_tags(self) -> List[str]:
         if hasattr(self.view, "openapi_tags"):
             return self.view.openapi_tags
@@ -69,7 +72,7 @@ class CustomAutoSchema(AutoSchema):
         responses = operation['responses']
 
         default_responses = {
-            '404': self._get_response_for_code(schemas.WEBSERVER_404_RESPONSE, '404', ["application/json"]),
+            code: self._get_response_for_code(schema, code, content_type) for code, (schema, content_type) in self.default_responses.items()
         }
         for code, content_response in default_responses.items():
             if code not in responses:

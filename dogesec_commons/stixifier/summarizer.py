@@ -13,7 +13,7 @@ You are a cyber-security threat intelligence analyst responsible for analysing i
 
 <requirement>
 
-Using the MARDKOWN of the report provided in <document>, provide an executive summary of it containing no more than one paragraphs.
+Using the MARKDOWN of the report provided in <document>, provide an executive summary of it containing no more than one paragraphs.
 
 IMPORTANT: the output should be structured as markdown text.
 IMPORTANT: do not put output in code block

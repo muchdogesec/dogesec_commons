@@ -26,7 +26,7 @@ def validate_model(model):
     try:
         extractor = txt2stix.txt2stix.parse_model(model)
     except BaseException as e:
-        raise ValidationError(str(e))
+        raise ValidationError(f"invalid model: {model}")
     return model
 
 def validate_extractor(typestr, types, name):

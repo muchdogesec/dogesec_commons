@@ -51,10 +51,12 @@ def parse_summarizer_model(value: str):
         splits = value.split(':', 1)
         provider = splits[0]
         if provider not in ALL_AI_EXTRACTORS:
-            raise Exception(f"invalid summary provider in `{value}`, must be one of [{list(ALL_AI_EXTRACTORS)}]")
+            raise ValidationError(f"invalid summary provider in `{value}`, must be one of [{list(ALL_AI_EXTRACTORS)}]")
         provider = get_provider(ALL_AI_EXTRACTORS[provider])
         if len(splits) == 2:
             return provider(model=splits[1])
         return provider()
+    except ValidationError:
+        raise
     except BaseException as e:
-        raise ValidationError(str(e)) from e
+        raise ValidationError(f'invalid model: {value}') from e

@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import typing, re
 from arango import ArangoClient
 from django.conf import settings
@@ -257,7 +258,11 @@ class ArangoDBHelper:
     def execute_query(self, query, bind_vars={}, paginate=True):
         if paginate:
             bind_vars['offset'], bind_vars['count'] = self.get_offset_and_count(self.count, self.page)
-        cursor = self.db.aql.execute(query, bind_vars=bind_vars, count=True, full_count=True)
+        try:
+            cursor = self.db.aql.execute(query, bind_vars=bind_vars, count=True, full_count=True)
+        except Exception as e:
+            logging.exception(e)
+            raise ValidationError("aql: cannot process request")
         if paginate:
             return self.get_paginated_response(cursor, self.page, self.page_size, cursor.statistics()["fullCount"], result_key=self.result_key)
         return list(cursor)

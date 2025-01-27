@@ -190,6 +190,8 @@ class QueryParams:
 class SingleObjectView(viewsets.ViewSet):
     lookup_url_kwarg = "object_id"
     openapi_tags = ["Objects"]
+    lookup_value_regex = r'[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
 
     def retrieve(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request).get_objects_by_id(
@@ -225,6 +227,11 @@ class ObjectsWithReportsView(SingleObjectView):
     @decorators.action(detail=True, methods=['GET'])
     def reports(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.VIEW_NAME, request, 'reports').get_containing_reports(kwargs.get(self.lookup_url_kwarg))
+
+    
+    @decorators.action(detail=True, methods=["DELETE"], url_path=r"reports/(?P<report_id>report--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+    def destroy_in_report(self, request, *args, object_id=None, report_id=None,**kwargs):
+        return ArangoDBHelper(conf.VIEW_NAME, request).delete_report_object(report_id=report_id, object_id=object_id)
     
    
 @extend_schema_view(

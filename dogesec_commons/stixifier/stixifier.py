@@ -112,7 +112,7 @@ class StixifyProcessor:
         ai_extractors = [txt2stix.txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
         txt2stix.txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, ai_extractors)
 
-        all_extracts = txt2stix.txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors)
+        all_extracts = txt2stix.txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors, ignore_extraction_boundary=self.profile.ignore_extraction_boundary)
  
         if self.profile.relationship_mode == models.RelationshipMode.AI and sum(map(lambda x: len(x), all_extracts.values())):
             ai_ref_extractor = txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships)

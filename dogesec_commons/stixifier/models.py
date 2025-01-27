@@ -36,6 +36,7 @@ class Profile(models.Model):
     ai_summary_provider = models.CharField(max_length=256, blank=False, null=True)
     ignore_image_refs = models.BooleanField(default=True)
     ignore_link_refs  = models.BooleanField(default=True)
+    ignore_extraction_boundary  = models.BooleanField(default=False)
 
     class Meta:
         app_label = settings.APP_LABEL

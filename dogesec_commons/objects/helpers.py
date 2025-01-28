@@ -10,6 +10,10 @@ from rest_framework.exceptions import ValidationError
 
 from . import conf
 
+from django.http import HttpResponse
+from django.conf import settings
+from rest_framework import decorators, response, status
+
 
 SDO_TYPES = set([
     "attack-pattern",
@@ -520,3 +524,53 @@ class ArangoDBHelper:
 
         return self.execute_query(query, bind_vars=bind_vars)
     
+
+    def delete_report_object(self, report_id, object_id):
+        query = """
+        let doc_id = FIRST(
+            FOR doc IN @@view
+            SEARCH doc.id == @object_id AND doc._stixify_report_id == @report_id
+            RETURN doc._id
+        )
+
+        FOR d IN APPEND([doc_id], (
+                FOR doc IN @@view
+                SEARCH doc._from == doc_id OR doc._to == doc_id 
+                RETURN doc._id)
+            )
+        FILTER d != NULL
+        RETURN d
+        """
+        bind_vars = {
+            "@view": self.collection,
+            "object_id": object_id,
+            "report_id": report_id,
+        }
+        ids: list[str] = self.execute_query(query, bind_vars=bind_vars, paginate=False)
+        # separate into collections
+        collections = {}
+        bind_vars = {
+            'ckeys': {}
+        }
+        queries = []
+        for id in ids:
+            collection_name, _key = id.split('/', 1)
+            ckeys = collections.setdefault(collection_name, [])
+            if not ckeys:
+                bind_vars["ckeys"][collection_name] = ckeys
+                bind_vars['@'+collection_name] = collection_name
+                queries.append(f"(FOR _key IN @ckeys.{collection_name} REMOVE {{_key}} IN @@{collection_name} RETURN TRUE)")
+            ckeys.append(_key)
+        
+        if not queries:
+            return response.Response(status=status.HTTP_204_NO_CONTENT)
+        queries = ",\n\t".join(queries)
+        query = f"""
+        RETURN LENGTH(UNION([], [], {queries}))
+        """
+        resp = self.execute_query(query, bind_vars=bind_vars, paginate=False)
+        logging.info("%s objects removed", str(resp))
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        # self.execute_query("LET" (",\n\t".join(queries)), bind_vars=bind_vars)
+
+

@@ -215,7 +215,7 @@ class SingleObjectView(viewsets.ViewSet):
                 "additionalProperties": True,
             }),
         parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
-        summary="Get all Reports that references STIX ID",
+        summary="Get all Reports that contain this STIX Objext",
         description=textwrap.dedent(
             """
             Using the STIX ID, you can find all reports the STIX Object is mentioned in

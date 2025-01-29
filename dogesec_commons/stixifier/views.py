@@ -52,6 +52,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             * `ignore_image_refs` (optional, default `true`): whether to ignore embedded image references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ignore_link_refs` (optional, default `true`): whether to ignore embedded link references. This is a [txt2stix](https://github.com/muchdogesec/txt2stix/) setting.
             * `ai_summary_provider` (optional): you can also generate a summary of the files this profile is linked to using an AI model. If not passed, no summmary will be generated. Pass in format `"provider:model"` e.g. `"openai:gpt-4o"`.
+            * `ignore_extraction_boundary` (optional, default `false`): defines if a string boundary can generate multiple extractions (e.g. `url`, `domain`, etc). Setting to `true` will allow multiple extractions from the same string. This is a [txt2stix](https://github.com/muchdogesec/file2txt) setting.
 
             A profile `id` is generated using a UUIDv5. The namespace used is `e92c648d-03eb-59a5-a318-9a36e6f8057c`, and the `name` is used as the value (e.g `my profile` would have the `id`: `9d9041f7-e535-5daa-972f-71cd20fb3855`).
 

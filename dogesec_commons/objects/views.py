@@ -221,7 +221,11 @@ class SingleObjectView(viewsets.ViewSet):
             Using the STIX ID, you can find all reports the STIX Object is mentioned in
             """
         ),
-    )
+    ),
+    destroy_in_report=extend_schema(
+        summary="remove object in report",
+        description="remove all references to object in report"
+    ),
 )
 class ObjectsWithReportsView(SingleObjectView):
     @decorators.action(detail=True, methods=['GET'])

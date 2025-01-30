@@ -527,34 +527,39 @@ class ArangoDBHelper:
 
     def delete_report_object(self, report_id, object_id):
         query = """
-        let doc_id = FIRST(
+        let doc_ids = (
             FOR doc IN @@view
-            SEARCH doc.id == @object_id AND doc._stixify_report_id == @report_id
-            RETURN doc._id
+            SEARCH doc.id IN [@object_id, @report_id] AND doc._stixify_report_id == @report_id
+            SORT doc.object_refs
+            RETURN [doc._id, doc.id]
         )
+        LET doc_id = FIRST(doc_ids[* FILTER CURRENT[1]== @object_id])
+        LET report_id = FIRST(FIRST(doc_ids[* FILTER CURRENT[1] == @report_id]))
 
-        FOR d IN APPEND([doc_id], (
+        RETURN [report_id, doc_id, (FOR d IN APPEND([doc_id], (
                 FOR doc IN @@view
-                SEARCH doc._from == doc_id OR doc._to == doc_id 
-                RETURN doc._id)
+                SEARCH doc._from == doc_id[0] OR doc._to == doc_id[0]
+                RETURN [doc._id, doc.id])
             )
         FILTER d != NULL
-        RETURN d
+        RETURN d)]
         """
         bind_vars = {
             "@view": self.collection,
             "object_id": object_id,
             "report_id": report_id,
         }
-        ids: list[str] = self.execute_query(query, bind_vars=bind_vars, paginate=False)
+        report_idkey, doc_id, ids_to_be_removed = self.execute_query(query, bind_vars=bind_vars, paginate=False)[0]
         # separate into collections
         collections = {}
         bind_vars = {
             'ckeys': {}
         }
         queries = []
-        for id in ids:
-            collection_name, _key = id.split('/', 1)
+        stix_ids = []
+        for key_id, stix_id in ids_to_be_removed:
+            stix_ids.append(stix_id)
+            collection_name, _key = key_id.split('/', 1)
             ckeys = collections.setdefault(collection_name, [])
             if not ckeys:
                 bind_vars["ckeys"][collection_name] = ckeys
@@ -569,7 +574,13 @@ class ArangoDBHelper:
         RETURN LENGTH(UNION([], [], {queries}))
         """
         resp = self.execute_query(query, bind_vars=bind_vars, paginate=False)
-        logging.info("%s objects removed", str(resp))
+        logging.info(f"{resp} objects removed")
+        resp = self.execute_query("""
+                                FOR doc in @@collection FILTER doc._id == @report_idkey
+                                    UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
+                                    RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
+                                  """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
+        logging.info(f"removed references from report.object_refs: {resp}")
         return response.Response(status=status.HTTP_204_NO_CONTENT)
         # self.execute_query("LET" (",\n\t".join(queries)), bind_vars=bind_vars)
 

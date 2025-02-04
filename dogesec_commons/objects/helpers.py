@@ -121,6 +121,7 @@ def positive_int(integer_string, cutoff=None, default=1):
 class ArangoDBHelper:
     max_page_size = conf.MAXIMUM_PAGE_SIZE
     page_size = conf.DEFAULT_PAGE_SIZE
+    SRO_OBJECTS_ONLY_LATEST = getattr(settings, 'SRO_OBJECTS_ONLY_LATEST', True)
 
     @staticmethod
     def get_like_literal(str: str):
@@ -405,7 +406,7 @@ class ArangoDBHelper:
 
         if term := self.query.get('name'):
             bind_vars['name'] = "%" + self.get_like_literal(term) + '%'
-            search_filters.append("LIKE(doc.name, @name)")
+            search_filters.append("doc.name LIKE @name")
 
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
@@ -430,7 +431,8 @@ class ArangoDBHelper:
         query = """
             FOR doc in @@view
             SEARCH doc.id == @id AND doc._is_latest == TRUE
-            LIMIT @offset, @count
+            LET _unused = [@offset, @count]
+            LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
         return self.execute_query(query, bind_vars=bind_vars)
@@ -458,27 +460,21 @@ class ArangoDBHelper:
             "@collection": self.collection,
         }
 
-        other_filters = []
+        search_filters = ['doc._is_latest == TRUE']
         
         if terms := self.query_as_array('source_ref_type'):
             bind_vars['source_ref_type'] = terms
-            other_filters.append('SPLIT(doc.source_ref, "--")[0] IN @source_ref_type')
+            search_filters.append('doc._source_type IN @source_ref_type')
             
         if terms := self.query_as_array('target_ref_type'):
             bind_vars['target_ref_type'] = terms
-            other_filters.append('SPLIT(doc.target_ref, "--")[0] IN @target_ref_type')
+            search_filters.append('doc._target_type IN @target_ref_type')
 
         if term := self.query.get('relationship_type'):
-            bind_vars['relationship_type'] = term
-            other_filters.append("CONTAINS(doc.relationship_type, @relationship_type)")
+            bind_vars['relationship_type'] = '%' + self.get_like_literal(term) + '%'
+            search_filters.append("doc.relationship_type LIKE @relationship_type")
 
-    
-        if other_filters:
-            other_filters = "FILTER " + " AND ".join(other_filters)
-        else:
-            other_filters = ""
 
-        search_filters = ['doc._is_latest == TRUE']
         if not self.query_as_bool('include_embedded_refs', True):
             search_filters.append('doc._is_ref != TRUE')
 
@@ -490,10 +486,13 @@ class ArangoDBHelper:
             bind_vars['source_ref'] = term
             search_filters.append('doc.source_ref == @source_ref')
 
+        if not self.SRO_OBJECTS_ONLY_LATEST:
+            search_filters[0] = '(doc._is_latest == TRUE OR doc._target_type IN @sco_types OR doc._source_type IN @sco_types)'
+            bind_vars['sco_types'] = list(SCO_TYPES)
+
         query = f"""
             FOR doc in @@collection
             SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
-            {other_filters}
             {self.get_sort_stmt(SRO_SORT_FIELDS)}
 
             LIMIT @offset, @count
@@ -521,7 +520,6 @@ class ArangoDBHelper:
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
         """
-
         return self.execute_query(query, bind_vars=bind_vars)
     
 

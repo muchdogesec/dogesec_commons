@@ -38,6 +38,11 @@ class Profile(models.Model):
     ignore_link_refs  = models.BooleanField(default=True)
     ignore_extraction_boundary  = models.BooleanField(default=False)
 
+    #############
+    ignore_embedded_relationships_sro = models.BooleanField(default=True)
+    ignore_embedded_relationships_smo = models.BooleanField(default=True)
+    ignore_embedded_relationships     = models.BooleanField(default=False)
+
     class Meta:
         app_label = settings.APP_LABEL
 

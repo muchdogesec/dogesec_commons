@@ -431,7 +431,8 @@ class ArangoDBHelper:
         query = """
             FOR doc in @@view
             SEARCH doc.id == @id AND doc._is_latest == TRUE
-            LIMIT @offset, @count
+            LET _unused = [@offset, @count]
+            LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
         return self.execute_query(query, bind_vars=bind_vars)

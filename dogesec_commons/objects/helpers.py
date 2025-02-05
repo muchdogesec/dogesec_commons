@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiParameter
 from ..utils.pagination import Pagination
 from rest_framework.exceptions import ValidationError
-
+from stix2arango.services import ArangoDBService
 from . import conf
 
 from django.http import HttpResponse
@@ -524,6 +524,15 @@ class ArangoDBHelper:
     
 
     def delete_report_object(self, report_id, object_id):
+        db_service = ArangoDBService(
+            self.DB_NAME,
+            [],
+            [],
+            create=False,
+            username=settings.ARANGODB_USERNAME,
+            password=settings.ARANGODB_PASSWORD,
+            host_url=settings.ARANGODB_HOST_URL,
+        )
         query = """
         let doc_ids = (
             FOR doc IN @@view
@@ -579,6 +588,8 @@ class ArangoDBHelper:
                                     RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
                                   """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
         logging.info(f"removed references from report.object_refs: {resp}")
+        doc_collection_name = doc_id.split('/')[0]
+        db_service.update_is_latest_several_chunked([object_id], doc_collection_name, doc_collection_name.removesuffix('_vertex_collection')+'_edge_collection')
         return response.Response(status=status.HTTP_204_NO_CONTENT)
         # self.execute_query("LET" (",\n\t".join(queries)), bind_vars=bind_vars)
 

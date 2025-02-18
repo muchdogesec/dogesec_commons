@@ -98,11 +98,11 @@ def get_link_properties(collection_name: str):
 
 
 def link_one_collection(db: StandardDatabase, view_name, collection_name):
+    logging.info(f"linking collection {collection_name} to {view_name}")
     view = db.view(view_name)
     link = {"includeAllFields": True}
     if link and collection_name:
         view["links"][collection_name] = link
-    logging.info(f"linking collection {collection_name} to {view_name}")
     db.update_arangosearch_view(view_name, view)
     logging.info(f"linked collection {collection_name} to {view_name}")
 
@@ -159,6 +159,6 @@ def startup_func():
     client = ArangoClient(settings.ARANGODB_HOST_URL)
     sys_db = client.db(username=settings.ARANGODB_USERNAME, password=settings.ARANGODB_PASSWORD)
     db = create_database(client, sys_db, conf.DB_NAME)
-    view = create_view(db, conf.VIEW_NAME)
+    view = create_view(db, conf.ARANGODB_DATABASE_VIEW)
     link_all_collections(db, view)
     logging.info("app ready")

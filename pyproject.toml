@@ -22,7 +22,7 @@ dependencies = [
     "python-arango>=8.1.3; python_version >= '3.8'",
     "django-filter>=24.2",
     "stix2",
-    "stix2arango",
+    "psycopg2-binary",
 ]
 
 [tool.hatch.metadata]
@@ -36,5 +36,5 @@ Issues = "https://github.com/muchdogesec/stixifier_commons/issues"
 stixifier = [
     "txt2stix",
     "file2txt",
-    "psycopg2-binary"
+    "stix2arango",
 ]

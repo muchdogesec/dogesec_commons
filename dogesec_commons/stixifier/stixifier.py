@@ -16,6 +16,7 @@ from txt2stix.stix import txt2stixBundler
 from txt2stix.ai_extractor import BaseAIExtractor
 from stix2arango.stix2arango import Stix2Arango
 from django.conf import settings
+from txt2stix.ai_extractor.utils import DescribesIncident
 
 
 from file2txt.converter import Fanger, get_parser_class
@@ -57,6 +58,7 @@ class StixifyProcessor:
         self.md_images = []
         self.processed_image_base_url = ""
         self.base_url = base_url
+        self.incident : DescribesIncident = None
 
         self.filename = self.tmpdir/Path(file.name).name
         self.filename.write_bytes(file.read())
@@ -124,6 +126,13 @@ class StixifyProcessor:
     def process(self) -> str:
         logging.info(f"running file2txt on {self.task_name}")
         self.file2txt()
+        if self.profile.ai_content_check_variable:
+            logging.info(f"checking if {self.task_name} describes incident")
+            content_checker = txt2stix.txt2stix.parse_model(self.profile.ai_content_check_variable)
+            self.incident = content_checker.check_content(self.output_md)
+            if not self.incident.describes_incident:
+                logging.info(f"this report ({self.report_id}) does not describe an incident")
+                return False
         logging.info(f"running txt2stix on {self.task_name}")
         bundler = self.txt2stix()
         self.write_bundle(bundler)

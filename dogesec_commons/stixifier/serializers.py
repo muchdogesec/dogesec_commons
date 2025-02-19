@@ -68,6 +68,12 @@ class ProfileSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
+    ai_content_check_variable = serializers.CharField(
+        max_length=256, validators=[validate_model],
+        allow_null=True,
+        required=False,
+        help_text='check content before proceeding'
+    )
     extractions = serializers.ListField(
         min_length=1,
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),

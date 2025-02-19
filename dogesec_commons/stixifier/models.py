@@ -30,7 +30,7 @@ class Profile(models.Model):
     extractions = ArrayField(base_field=models.CharField(max_length=256))
     relationship_mode = models.CharField(choices=RelationshipMode.choices, max_length=20, default=RelationshipMode.STANDARD)
     extract_text_from_image = models.BooleanField(default=False)
-    defang = models.BooleanField(help_text='If the text should be defanged before processing')
+    defang = models.BooleanField()
     ai_settings_relationships = models.CharField(max_length=256, blank=False, null=True)
     ai_settings_extractions = ArrayField(base_field=models.CharField(max_length=256), default=list)
     ai_summary_provider = models.CharField(max_length=256, blank=False, null=True)
@@ -43,11 +43,8 @@ class Profile(models.Model):
     ignore_embedded_relationships_smo = models.BooleanField(default=True)
     ignore_embedded_relationships     = models.BooleanField(default=False)
 
-    class Meta:
-        app_label = settings.APP_LABEL
-
 
     def save(self, *args, **kwargs) -> None:
         if not self.id:
-            self.id = uuid.uuid5(settings.STIX_NAMESPACE, self.name)
+            self.id = uuid.uuid5(settings.STIXIFIER_NAMESPACE, self.name)
         return super().save(*args, **kwargs)

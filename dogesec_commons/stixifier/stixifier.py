@@ -153,8 +153,8 @@ class StixifyProcessor:
             username=settings.ARANGODB_USERNAME,
             password=settings.ARANGODB_PASSWORD,
         )
-        db_view_creator.link_one_collection(s2a.arango.db, settings.VIEW_NAME, f"{self.collection_name}_edge_collection")
-        db_view_creator.link_one_collection(s2a.arango.db, settings.VIEW_NAME, f"{self.collection_name}_vertex_collection")
+        db_view_creator.link_one_collection(s2a.arango.db, settings.ARANGODB_DATABASE_VIEW, f"{self.collection_name}_edge_collection")
+        db_view_creator.link_one_collection(s2a.arango.db, settings.ARANGODB_DATABASE_VIEW, f"{self.collection_name}_vertex_collection")
         s2a.run()
 
     def __del__(self):

@@ -73,6 +73,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),
         help_text="extraction id(s)",
     )
+    defang = serializers.BooleanField(help_text='If the text should be defanged before processing')
 
     ignore_embedded_relationships     = serializers.BooleanField(required=False, help_text="applies to SDO and SCO types (default is `false`)")
     ignore_embedded_relationships_sro = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on `relationship` object types (default is `true`)")

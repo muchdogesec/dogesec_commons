@@ -36,7 +36,7 @@ SDO_TYPES = set([
     "sighting",
     "tool",
     "vulnerability",
-    "weakness",
+    "weakness"
 ])
 
 SCO_TYPES = set([

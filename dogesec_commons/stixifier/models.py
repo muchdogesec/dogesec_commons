@@ -33,7 +33,7 @@ class Profile(models.Model):
     defang = models.BooleanField()
     ai_settings_relationships = models.CharField(max_length=256, blank=False, null=True)
     ai_settings_extractions = ArrayField(base_field=models.CharField(max_length=256), default=list)
-    ai_content_check_variable = models.CharField(default=None, null=True, blank=False, max_length=256)
+    ai_content_check_provider = models.CharField(default=None, null=True, blank=False, max_length=256)
     ai_summary_provider = models.CharField(max_length=256, blank=False, null=True)
     ignore_image_refs = models.BooleanField(default=True)
     ignore_link_refs  = models.BooleanField(default=True)

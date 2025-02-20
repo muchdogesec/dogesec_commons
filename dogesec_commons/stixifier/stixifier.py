@@ -126,9 +126,9 @@ class StixifyProcessor:
     def process(self) -> str:
         logging.info(f"running file2txt on {self.task_name}")
         self.file2txt()
-        if self.profile.ai_content_check_variable:
+        if self.profile.ai_content_check_provider:
             logging.info(f"checking if {self.task_name} describes incident")
-            content_checker = txt2stix.txt2stix.parse_model(self.profile.ai_content_check_variable)
+            content_checker = txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider)
             self.incident = content_checker.check_content(self.output_md)
             if not self.incident.describes_incident:
                 logging.info(f"this report ({self.report_id}) does not describe an incident")

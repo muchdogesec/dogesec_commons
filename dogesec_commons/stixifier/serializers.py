@@ -68,7 +68,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         allow_null=True,
         required=False,
     )
-    ai_content_check_variable = serializers.CharField(
+    ai_content_check_provider = serializers.CharField(
         max_length=256, validators=[validate_model],
         allow_null=True,
         required=False,

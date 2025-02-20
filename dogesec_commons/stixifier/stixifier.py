@@ -109,17 +109,18 @@ class StixifyProcessor:
         )
         self.extra_data['_stixify_report_id'] = str(bundler.report.id)
         input_text = txt2stix.utils.remove_links(self.output_md, self.profile.ignore_image_refs, self.profile.ignore_link_refs)
-
-
         ai_extractors = [txt2stix.txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
-        txt2stix.txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, ai_extractors)
-
-        all_extracts = txt2stix.txt2stix.extract_all(bundler, extractors_map, input_text, ai_extractors=ai_extractors, ignore_extraction_boundary=self.profile.ignore_extraction_boundary)
- 
-        if self.profile.relationship_mode == models.RelationshipMode.AI and sum(map(lambda x: len(x), all_extracts.values())):
-            ai_ref_extractor = txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships)
-            txt2stix.txt2stix.validate_token_count(settings.INPUT_TOKEN_LIMIT, input_text, [ai_ref_extractor])
-            txt2stix.txt2stix.extract_relationships_with_ai(bundler, input_text, all_extracts, ai_ref_extractor)
+        data = txt2stix.txt2stix.run_txt2stix(
+            bundler, input_text, extractors_map,
+                ai_content_check_provider=txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider),
+                ai_create_attack_flow=self.profile.ai_create_attack_flow,
+                input_token_limit=settings.INPUT_TOKEN_LIMIT,
+                ai_settings_extractions=ai_extractors,
+                ai_settings_relationships=txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships),
+                relationship_mode=self.profile.relationship_mode,
+                ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
+        )
+        self.incident = data.content_check
         return bundler
 
 

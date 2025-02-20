@@ -74,12 +74,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         required=False,
         help_text='check content before proceeding'
     )
+    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=True)
     extractions = serializers.ListField(
         min_length=1,
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),
         help_text="extraction id(s)",
     )
     defang = serializers.BooleanField(help_text='If the text should be defanged before processing')
+
 
     ignore_embedded_relationships     = serializers.BooleanField(required=False, help_text="applies to SDO and SCO types (default is `false`)")
     ignore_embedded_relationships_sro = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on `relationship` object types (default is `true`)")
@@ -90,8 +92,11 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, attrs):
-        if attrs['relationship_mode'] == 'ai' and not attrs.get('ai_settings_relationships'):
-            raise ValidationError('AI `relationship_mode` requires a valid `ai_settings_relationships`')
+        if not attrs.get('ai_settings_relationships'):
+            if attrs['relationship_mode'] == 'ai':
+                raise ValidationError('`ai_settings_relationships` is required when `relationship_mode == "ai"`')
+            if attrs['ai_create_attack_flow']:
+                raise ValidationError('`ai_settings_relationships` is required when `ai_create_attack_flow == true`')
         if not attrs.get('ai_settings_extractions'):
             uses_ai(attrs['extractions'])
         return super().validate(attrs)

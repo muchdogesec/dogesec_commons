@@ -112,11 +112,11 @@ class StixifyProcessor:
         ai_extractors = [txt2stix.txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
         data = txt2stix.txt2stix.run_txt2stix(
             bundler, input_text, extractors_map,
-                ai_content_check_provider=txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider),
+                ai_content_check_provider=self.profile.ai_content_check_provider and txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider),
                 ai_create_attack_flow=self.profile.ai_create_attack_flow,
                 input_token_limit=settings.INPUT_TOKEN_LIMIT,
                 ai_settings_extractions=ai_extractors,
-                ai_settings_relationships=txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships),
+                ai_settings_relationships=self.profile.ai_settings_relationships and txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships),
                 relationship_mode=self.profile.relationship_mode,
                 ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
         )

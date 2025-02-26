@@ -360,7 +360,9 @@ class ArangoDBHelper:
             {other_filters or ""}
             {self.get_sort_stmt(SCO_SORT_FIELDS)}
 
-
+            COLLECT id = doc.id INTO docs
+            LET doc = docs[0].doc
+            
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
         """

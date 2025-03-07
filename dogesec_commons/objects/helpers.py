@@ -361,7 +361,7 @@ class ArangoDBHelper:
             {self.get_sort_stmt(SCO_SORT_FIELDS)}
 
             COLLECT id = doc.id INTO docs
-            LET doc = docs[0].doc
+            LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
             
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
@@ -384,6 +384,9 @@ class ArangoDBHelper:
             {other_filters or ""}
             {self.get_sort_stmt(SMO_SORT_FIELDS)}
 
+
+            COLLECT id = doc.id INTO docs
+            LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
 
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
@@ -420,6 +423,9 @@ class ArangoDBHelper:
             {other_filters or ""}
             {self.get_sort_stmt(SDO_SORT_FIELDS)}
 
+            
+            COLLECT id = doc.id INTO docs
+            LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
 
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
@@ -498,6 +504,9 @@ class ArangoDBHelper:
             SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
             {self.get_sort_stmt(SRO_SORT_FIELDS)}
 
+            COLLECT id = doc.id INTO docs
+            LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
+
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
 
@@ -532,6 +541,8 @@ class ArangoDBHelper:
             [],
             [],
             create=False,
+            create_db=False,
+            create_collection=False,
             username=settings.ARANGODB_USERNAME,
             password=settings.ARANGODB_PASSWORD,
             host_url=settings.ARANGODB_HOST_URL,
@@ -569,12 +580,13 @@ class ArangoDBHelper:
         stix_ids = []
         for key_id, stix_id in ids_to_be_removed:
             stix_ids.append(stix_id)
+            print(key_id)
             collection_name, _key = key_id.split('/', 1)
             ckeys = collections.setdefault(collection_name, [])
             if not ckeys:
                 bind_vars["ckeys"][collection_name] = ckeys
                 bind_vars['@'+collection_name] = collection_name
-                queries.append(f"(FOR _key IN @ckeys.{collection_name} REMOVE {{_key}} IN @@{collection_name} RETURN TRUE)")
+                queries.append(f"(FOR _key IN @ckeys.{collection_name} REMOVE {{_key}} IN @@{collection_name} OPTIONS {{ ignoreErrors: false }} RETURN TRUE)")
             ckeys.append(_key)
         
         if not queries:
@@ -591,8 +603,9 @@ class ArangoDBHelper:
                                     RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
                                   """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
         logging.info(f"removed references from report.object_refs: {resp}")
-        doc_collection_name = doc_id.split('/')[0]
-        db_service.update_is_latest_several_chunked([object_id], doc_collection_name, doc_collection_name.removesuffix('_vertex_collection')+'_edge_collection')
+        if doc_id:
+            doc_collection_name = doc_id[0].split('/')[0]
+            db_service.update_is_latest_several_chunked(list(set([object_id]+stix_ids)), doc_collection_name, doc_collection_name.removesuffix('_vertex_collection').removesuffix('_edge_collection')+'_edge_collection')
         return response.Response(status=status.HTTP_204_NO_CONTENT)
         # self.execute_query("LET" (",\n\t".join(queries)), bind_vars=bind_vars)
 

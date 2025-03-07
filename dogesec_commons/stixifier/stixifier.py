@@ -63,7 +63,7 @@ class StixifyProcessor:
         self.filename = self.tmpdir/Path(file.name).name
         self.filename.write_bytes(file.read())
 
-        self.task_name = f"{self.profile.name}/{self.job_id}/{self.report_id}"
+        self.task_name = f"{self.profile.name}/{job_id}/{self.report_id}"
         
     def setup(self, /, report_prop: ReportProperties, extra={}):
         self.extra_data.update(extra)
@@ -143,8 +143,6 @@ class StixifyProcessor:
 
     def write_bundle(self, bundler: txt2stixBundler):
         bundle = json.loads(bundler.to_json())
-        for obj in bundle['objects']:
-            obj.update(self.extra_data)
         self.bundle = json.dumps(bundle, indent=4)
         self.bundle_file = self.tmpdir/f"bundle_{self.report_id}.json"
         self.bundle_file.write_text(self.bundle)
@@ -155,7 +153,7 @@ class StixifyProcessor:
             file=str(self.bundle_file),
             database=settings.ARANGODB_DATABASE,
             collection=self.collection_name,
-            stix2arango_note=f"stixify-job--{self.job_id}",
+            stix2arango_note=f"stixifier-report--{self.report_id}",
             ignore_embedded_relationships=self.profile.ignore_embedded_relationships,
             ignore_embedded_relationships_smo=self.profile.ignore_embedded_relationships_smo,
             ignore_embedded_relationships_sro=self.profile.ignore_embedded_relationships_sro,
@@ -163,6 +161,7 @@ class StixifyProcessor:
             username=settings.ARANGODB_USERNAME,
             password=settings.ARANGODB_PASSWORD,
         )
+        s2a.arangodb_extra_data.update(self.extra_data)
         db_view_creator.link_one_collection(s2a.arango.db, settings.ARANGODB_DATABASE_VIEW, f"{self.collection_name}_edge_collection")
         db_view_creator.link_one_collection(s2a.arango.db, settings.ARANGODB_DATABASE_VIEW, f"{self.collection_name}_vertex_collection")
         s2a.run()

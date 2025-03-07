@@ -580,33 +580,22 @@ class ArangoDBHelper:
         stix_ids = []
         for key_id, stix_id in ids_to_be_removed:
             stix_ids.append(stix_id)
-            print(key_id)
-            collection_name, _key = key_id.split('/', 1)
-            ckeys = collections.setdefault(collection_name, [])
-            if not ckeys:
-                bind_vars["ckeys"][collection_name] = ckeys
-                bind_vars['@'+collection_name] = collection_name
-                queries.append(f"(FOR _key IN @ckeys.{collection_name} REMOVE {{_key}} IN @@{collection_name} OPTIONS {{ ignoreErrors: false }} RETURN TRUE)")
-            ckeys.append(_key)
+            try:
+                db_service.db.delete_document(key_id)
+            except Exception as e:
+                logging.exception("failed to delete object %s", key_id)
         
-        if not queries:
+        if not stix_ids:
             return response.Response(status=status.HTTP_204_NO_CONTENT)
-        queries = ",\n\t".join(queries)
-        query = f"""
-        RETURN LENGTH(UNION([], [], {queries}))
-        """
-        resp = self.execute_query(query, bind_vars=bind_vars, paginate=False)
-        logging.info(f"{resp} objects removed")
         resp = self.execute_query("""
                                 FOR doc in @@collection FILTER doc._id == @report_idkey
                                     UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
                                     RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
                                   """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
-        logging.info(f"removed references from report.object_refs: {resp}")
+        print(f"removed references from report.object_refs: {resp} // {ids_to_be_removed}")
         if doc_id:
             doc_collection_name = doc_id[0].split('/')[0]
             db_service.update_is_latest_several_chunked(list(set([object_id]+stix_ids)), doc_collection_name, doc_collection_name.removesuffix('_vertex_collection').removesuffix('_edge_collection')+'_edge_collection')
         return response.Response(status=status.HTTP_204_NO_CONTENT)
-        # self.execute_query("LET" (",\n\t".join(queries)), bind_vars=bind_vars)
 
 

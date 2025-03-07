@@ -592,7 +592,7 @@ class ArangoDBHelper:
                                     UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
                                     RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
                                   """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
-        print(f"removed references from report.object_refs: {resp} // {ids_to_be_removed}")
+        logging.info(f"removed references from report.object_refs: {resp} // {ids_to_be_removed}")
         if doc_id:
             doc_collection_name = doc_id[0].split('/')[0]
             db_service.update_is_latest_several_chunked(list(set([object_id]+stix_ids)), doc_collection_name, doc_collection_name.removesuffix('_vertex_collection').removesuffix('_edge_collection')+'_edge_collection')

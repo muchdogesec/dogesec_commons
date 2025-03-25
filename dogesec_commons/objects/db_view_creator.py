@@ -155,7 +155,7 @@ def link_all_collections(db: StandardDatabase, view: dict):
 
 
 def startup_func():
-    logging.info("setting up obstracts database")
+    logging.info("setting up database")
     client = ArangoClient(settings.ARANGODB_HOST_URL)
     sys_db = client.db(username=settings.ARANGODB_USERNAME, password=settings.ARANGODB_PASSWORD)
     db = create_database(client, sys_db, conf.DB_NAME)

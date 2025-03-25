@@ -47,7 +47,7 @@ class ReportProperties:
 
 
 class StixifyProcessor:
-    def __init__(self, file: io.FileIO, profile: models.Profile, job_id: uuid.UUID, post=None, file2txt_mode='html', report_id=None, base_url=None) -> None:
+    def __init__(self, file: io.FileIO, profile: models.Profile, job_id: uuid.UUID, post=None, file2txt_mode='html', report_id=None, base_url=None, always_extract=False) -> None:
         self.job_id = str(job_id)
         self.extra_data = dict()
         self.report_id = report_id
@@ -64,6 +64,7 @@ class StixifyProcessor:
         self.filename.write_bytes(file.read())
 
         self.task_name = f"{self.profile.name}/{job_id}/{self.report_id}"
+        self.always_extract = always_extract
         
     def setup(self, /, report_prop: ReportProperties, extra={}):
         self.extra_data.update(extra)
@@ -101,7 +102,7 @@ class StixifyProcessor:
             tlp_level=self.report_prop.tlp_level,
             confidence=self.report_prop.confidence,
             labels=self.report_prop.labels,
-            description=self.output_md, 
+            description=self.output_md,
             extractors=extractors,
             report_id=self.report_id,
             created=self.report_prop.created,
@@ -110,7 +111,7 @@ class StixifyProcessor:
         self.extra_data['_stixify_report_id'] = str(bundler.report.id)
         input_text = txt2stix.utils.remove_links(self.output_md, self.profile.ignore_image_refs, self.profile.ignore_link_refs)
         ai_extractors = [txt2stix.txt2stix.parse_model(model_str) for model_str in self.profile.ai_settings_extractions]
-        data = txt2stix.txt2stix.run_txt2stix(
+        self.txt2stix_data = txt2stix.txt2stix.run_txt2stix(
             bundler, input_text, extractors_map,
                 ai_content_check_provider=self.profile.ai_content_check_provider and txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider),
                 ai_create_attack_flow=self.profile.ai_create_attack_flow,
@@ -119,21 +120,15 @@ class StixifyProcessor:
                 ai_settings_relationships=self.profile.ai_settings_relationships and txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships),
                 relationship_mode=self.profile.relationship_mode,
                 ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
+                always_extract=self.always_extract,
         )
-        self.incident = data.content_check
+        self.incident = self.txt2stix_data.content_check
         return bundler
 
 
     def process(self) -> str:
         logging.info(f"running file2txt on {self.task_name}")
         self.file2txt()
-        if self.profile.ai_content_check_provider:
-            logging.info(f"checking if {self.task_name} describes incident")
-            content_checker = txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider)
-            self.incident = content_checker.check_content(self.output_md)
-            if not self.incident.describes_incident:
-                logging.info(f"this report ({self.report_id}) does not describe an incident")
-                return False
         logging.info(f"running txt2stix on {self.task_name}")
         bundler = self.txt2stix()
         self.write_bundle(bundler)

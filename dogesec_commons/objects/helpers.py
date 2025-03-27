@@ -164,7 +164,7 @@ class ArangoDBHelper:
                 "page_number": page_number,
                 "page_results_count": len(data),
                 "total_results_count": full_count,
-                result_key: data,
+                result_key: list(data),
             }
         )
 

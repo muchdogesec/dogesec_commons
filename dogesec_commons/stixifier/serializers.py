@@ -1,5 +1,7 @@
 import argparse
+import contextlib
 from functools import partial
+import uuid
 from rest_framework import serializers
 
 from . import conf
@@ -35,6 +37,15 @@ def validate_extractor(typestr, types, name):
         )
     if  name not in extractors or extractors[name].type not in types:
         raise ValidationError(f"`{name}` is not a valid {typestr}", 400)
+    
+def validate_stix_id(stix_id: str, type: str):
+    type_part, _, id_part = stix_id.partition('--')
+    if type_part != type:
+        raise ValidationError(f"Invalid STIX ID for type `{type}`")
+    with contextlib.suppress(Exception):
+        uuid.UUID(id_part)
+        return stix_id
+    raise ValidationError("Invalid STIX ID")
 
 
 def uses_ai(slugs):
@@ -51,6 +62,14 @@ def uses_ai(slugs):
 
 class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
+    identity_id = serializers.CharField(
+        max_length=46,
+        validators=[lambda stix_id: validate_stix_id(stix_id, "identity")],
+        allow_null=True,
+        required=False,
+        help_text="STIX Identity ID (e.g `identity--19686d47-3a50-48a0-8ef0-f3e0f8a4bd99`)"
+    )
+
     ai_settings_relationships = serializers.CharField(
         validators=[validate_model],
         help_text='(required if AI relationship enabled): passed in format `provider:model`. Can only pass one model at this time.',

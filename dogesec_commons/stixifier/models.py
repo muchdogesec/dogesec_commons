@@ -27,6 +27,7 @@ class Profile(models.Model):
     id = models.UUIDField(primary_key=True)
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=250, unique=True)
+    identity_id = models.CharField(max_length=46, null=True, default=None)
     extractions = ArrayField(base_field=models.CharField(max_length=256))
     relationship_mode = models.CharField(choices=RelationshipMode.choices, max_length=20, default=RelationshipMode.STANDARD)
     extract_text_from_image = models.BooleanField(default=False)
@@ -48,5 +49,8 @@ class Profile(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if not self.id:
-            self.id = uuid.uuid5(settings.STIXIFIER_NAMESPACE, self.name)
+            name = self.name
+            if self.identity_id:
+                name = f"{self.name}+{self.identity_id}"
+            self.id = uuid.uuid5(settings.STIXIFIER_NAMESPACE, name)
         return super().save(*args, **kwargs)

@@ -43,6 +43,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             The following key/values are accepted in the body of the request:
 
             * `name` (required - must be unique)
+            * `identity_id` (optional): a STIX Identity ID that you want to use to create the profile. Pass the full identity ID, e.g. `identity--de9fb9bd-7895-4b23-aa03-49250d9263c9`
             * `ai_create_attack_flow` (optional, boolean): default is `true`. passing as `true` will prompt the AI model (the same entered for `ai_settings_relationships`) to generate an [Attack Flow](https://center-for-threat-informed-defense.github.io/attack-flow/) for the MITRE ATT&CK extractions to define the logical order in which they are being described. You must pass `--ai_settings_relationships` for this to work.
             * `ai_summary_provider` (optional): you can also generate a summary of the files this profile is linked to using an AI model. If not passed, no summary will be generated. Pass in format `"provider:model"` e.g. `"openai:gpt-4o"`.
             * `ai_content_check_provider` (optional, boolean): default `true`. Setting to `true` will get the AI to try and classify the text in the input to 1) determine if it is talking about threat intelligence, and 2) what type of threat intelligence it is talking about. For context, we use this to filter out non-threat intel posts in Obstracts Web (note, we don't filter in this way Stixify Web) using `always_extract` in dogesec_commons to reduce the cost of AI models and make them easier to search through classifications. You pass `provider:model` with this flag to determine the AI model you wish to use to perform the check. 
@@ -59,7 +60,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             * `ignore_embedded_relationships_sro` (optional, default: false): boolean, if `true` passed, will stop any embedded relationships from being generated from SRO objects (`type` = `relationship`). This is a [stix2arango](https://github.com/muchdogesec/stix2arango) setting.
             * `ignore_embedded_relationships_smo` (optional, default: false): boolean, if `true` passed, will stop any embedded relationships from being generated from SMO objects (`type` = `marking-definition`, `extension-definition`, `language-content`). This is a [stix2arango](https://github.com/muchdogesec/stix2arango) setting.
 
-            A profile `id` is generated using a UUIDv5. The namespace used is `e92c648d-03eb-59a5-a318-9a36e6f8057c`, and the `name+identity_id` is used as the value (e.g `my profile+identity--de9fb9bd-7895-4b23-aa03-49250d9263c9` would have the `id`: `16589b54-33ae-536c-9d2f-5d8e140486e8`).
+            A profile `id` is generated using a UUIDv5. The namespace used is is set using the `STIXIFIER_NAMESPACE` in dogesec tools, and the `name+identity_id` is used as the value (e.g a namespace of `9779a2db-f98c-5f4b-8d08-8ee04e02dbb5` and value `my profile+identity--de9fb9bd-7895-4b23-aa03-49250d9263c9` would have the `id`: `05004944-0eff-507e-8ef8-9ebdd043a51b`). Note, the name
 
             You cannot modify a profile once it is created. If you need to make changes, you should create another profile with the changes made. If it is essential that the same `name` + `identity_id` value be used, then you must first delete the profile in order to recreate it.
             """

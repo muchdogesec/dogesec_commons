@@ -97,9 +97,12 @@ class ProfileView(viewsets.ModelViewSet):
 
     class filterset_class(FilterSet):
         name = Filter(
-            label="Searches Profiles by their `name`. Search is wildcard. For example, `ip` will return Profiles with names `ip-extractions`, `ips`, etc.",
-            lookup_expr="search"
+            help_text="Searches Profiles by their `name`. Search is wildcard. For example, `ip` will return Profiles with names `ip-extractions`, `ips`, etc.",
+            lookup_expr="icontains"
             )
+        identity_id = Filter(
+            help_text="filter the results by the identity that created the Profile. Use a full STIX identity ID, e.g. `identity--de9fb9bd-7895-4b23-aa03-49250d9263c9`"
+        )
 
     def get_queryset(self):
         return Profile.objects

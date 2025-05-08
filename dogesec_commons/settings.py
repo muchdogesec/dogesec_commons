@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dogesec_commons.stixifier',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -126,3 +127,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MAXIMUM_PAGE_SIZE = int(os.getenv("MAX_PAGE_SIZE", 50))
 DEFAULT_PAGE_SIZE = int(os.getenv("DEFAULT_PAGE_SIZE", 50))
+
+
+SPECTACULAR_SETTINGS = {
+    # available SwaggerUI configuration parameters
+    # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+    },
+    # available SwaggerUI versions: https://github.com/swagger-api/swagger-ui/releases
+    "SWAGGER_UI_DIST": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@latest", # default
+}
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}

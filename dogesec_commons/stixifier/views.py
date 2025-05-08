@@ -4,8 +4,9 @@ from drf_spectacular.types import OpenApiTypes
 from ..utils import Pagination, Ordering
 
 from rest_framework import viewsets, response, mixins, exceptions
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter, BooleanFilter
 from .serializers import DEFAULT_400_ERROR, DEFAULT_404_ERROR, Txt2stixExtractorSerializer
+from django.forms import NullBooleanField
 
 from .serializers import ProfileSerializer
 
@@ -173,6 +174,7 @@ class ExtractorsView(txt2stixView):
     class filterset_class(FilterSet):
         type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="Filter Extractors by their `type`")
         name = Filter(help_text="Filter extractors by `name`. Is wildcard search so `ip` will return `ipv4`, `ipv6`, etc.)")
+        web_app = BooleanFilter(help_text="filters on `dogesec_web` property in txt2stix filter.\nuse case is, web app can set this to true to only show extractors allowed in web app")
 
     def get_all(self):
         types = EXTRACTOR_TYPES
@@ -183,4 +185,8 @@ class ExtractorsView(txt2stixView):
 
         if name := self.request.GET.get('name', '').lower():
             extractors = {slug: extractor for slug, extractor in extractors.items() if name in extractor['name'].lower()}
+
+        webapp_filter = NullBooleanField.to_python(..., self.request.GET.get('web_app', ''))
+        if webapp_filter != None:
+            extractors = {slug: extractor for slug, extractor in extractors.items() if extractor.get('dogesec_web') == webapp_filter}
         return extractors

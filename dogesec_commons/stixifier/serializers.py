@@ -165,6 +165,7 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     created_by = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField()
     stix_mapping = serializers.CharField(required=False, allow_null=True)
+    dogesec_web = serializers.BooleanField(required=False, allow_null=True)
 
     @classmethod
     def all_extractors(cls, types):
@@ -181,7 +182,7 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     
     @classmethod
     def cleanup_extractor(cls, dct: dict):
-        KEYS = ["name", "type", "description", "notes", "file", "created", "modified", "created_by", "version", "stix_mapping"]
+        KEYS = cls(data={}).get_fields()
         retval = {"id": dct["slug"]}
         for key in KEYS:
             if key in dct:

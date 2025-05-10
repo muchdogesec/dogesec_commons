@@ -17,10 +17,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
-from dogesec_commons.stixifier.views import ProfileView
+from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 router = routers.SimpleRouter(use_regex_path=False)
+
 router.register('profiles', ProfileView, "profile-view")
+# txt2stix views
+router.register('extractors', ExtractorsView, "extractors-view")
 urlpatterns = [
     path(f'api/', include(router.urls)),
     path('admin/', admin.site.urls),
+
+    # YOUR PATTERNS
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]

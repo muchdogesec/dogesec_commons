@@ -446,6 +446,36 @@ class ArangoDBHelper:
         """
         return self.execute_query(query, bind_vars=bind_vars)
     
+    def get_object_bundle(self, id):
+        bind_vars = {
+            "@view": self.collection,
+            "id": id,
+        }
+        rel_search_filters = []
+        search_filters = []
+        if not self.query_as_bool('include_embedded_refs', True):
+            rel_search_filters.append('doc._is_ref != TRUE')
+        
+        if types := self.query_as_array('types'):
+            rel_search_filters.append('(doc._target_type IN @types OR doc._source_type IN @types)')
+            search_filters.append('doc.type IN @types')
+            bind_vars['types'] = types
+
+
+        query = """
+            LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
+            FOR doc IN @@view
+            SEARCH (doc._id IN bundle_ids OR (doc.id == @id AND doc._is_latest == TRUE)) // extra_search
+            LIMIT @offset, @count
+            RETURN KEEP(doc, KEYS(doc, TRUE))
+        """
+        if rel_search_filters:
+            query = query.replace('/* rel_search_extras */', ' AND ' + ' AND '.join(rel_search_filters))
+        if search_filters:
+            query = query.replace('// extra_search', ' AND ' + ' AND '.join(search_filters))
+        return self.execute_query(query, bind_vars=bind_vars)
+
+    
     def get_containing_reports(self, id):
         bind_vars = {
             "@view": self.collection,

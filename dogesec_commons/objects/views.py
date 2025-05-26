@@ -136,7 +136,7 @@ class QueryParams:
         OpenApiParameter('sort', enum=SRO_SORT_FIELDS),
     ]
 
-    types = OpenApiParameter(
+    all_types = OpenApiParameter(
         "types",
         many=True,
         explode=False,
@@ -148,10 +148,10 @@ class QueryParams:
         enum=OBJECT_TYPES,
     )
     OBJECTS_PARAMS = [
-        types,
+        all_types,
     ]
 
-    types = OpenApiParameter(
+    smo_types = OpenApiParameter(
         "types",
         many=True,
         explode=False,
@@ -163,7 +163,7 @@ class QueryParams:
         enum=SMO_TYPES,
     )
     SMO_PARAMS = [
-        types,
+        smo_types,
         OpenApiParameter('sort', enum=SMO_SORT_FIELDS),
     ]
 
@@ -185,6 +185,16 @@ class QueryParams:
         ),
         responses=ArangoDBHelper.get_paginated_response_schema(),
         parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
+    ),
+    bundle=extend_schema(
+        summary="Get STIX Object's Bundle",
+        description=textwrap.dedent(
+            """
+            Get all objects that stem from STIX Object in a bundle
+            """
+        ),
+        responses=ArangoDBHelper.get_paginated_response_schema(),
+        parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param, QueryParams.all_types, QueryParams.include_embedded_refs],
     )
 )
 class SingleObjectView(viewsets.ViewSet):
@@ -197,6 +207,10 @@ class SingleObjectView(viewsets.ViewSet):
         return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_objects_by_id(
             kwargs.get(self.lookup_url_kwarg)
         )
+    
+    @decorators.action(detail=True, methods=['GET'])
+    def bundle(self, request, *args, **kwargs):
+        return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_object_bundle(kwargs.get(self.lookup_url_kwarg))
 
     
 @extend_schema_view(

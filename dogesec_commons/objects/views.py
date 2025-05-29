@@ -190,7 +190,7 @@ class QueryParams:
         summary="Get STIX Object's Bundle",
         description=textwrap.dedent(
             """
-            Get all objects that stem from STIX Object in a bundle
+            Return all objects the STIX Object has a relationship to as a bundle of all objects.
             """
         ),
         responses=ArangoDBHelper.get_paginated_response_schema(),
@@ -229,10 +229,10 @@ class SingleObjectView(viewsets.ViewSet):
                 "additionalProperties": True,
             }),
         parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param],
-        summary="Get all Reports that contain this STIX Objext",
+        summary="Get all Reports that contain this STIX Object",
         description=textwrap.dedent(
             """
-            Using the STIX ID, you can find all reports the STIX Object is mentioned in
+            Return all reports the STIX Object has a Relationship to.
             """
         ),
     ),

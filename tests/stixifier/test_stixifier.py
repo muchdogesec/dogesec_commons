@@ -6,6 +6,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch, MagicMock
 
+from txt2stix import txt2stixBundler
+
 from dogesec_commons.stixifier.stixifier import (
     StixifyProcessor,
     ReportProperties,
@@ -222,3 +224,27 @@ def test_upload_to_arango(fake_file, fake_profile):
         processor.upload_to_arango()
         mock_instance.run.assert_called()
         assert mock_link.call_count == 2
+
+def test_process(fake_file, fake_profile):
+    processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4(), report_id="abc")
+    with patch.object(StixifyProcessor, 'file2txt') as mock_f2t, patch.object(
+        StixifyProcessor, 'txt2stix'
+    ) as mock_t2s, patch.object(
+        StixifyProcessor, 'summarize'
+    ) as mock_summarize, patch.object(
+        StixifyProcessor, 'write_bundle'
+    ), patch.object(StixifyProcessor, 'upload_to_arango') as mock_upload_to_arango:
+        assert processor.process() == mock_t2s.return_value.report.id
+        mock_f2t.assert_called_once()
+        mock_t2s.assert_called_once()
+        mock_summarize.assert_called_once()
+        mock_upload_to_arango.assert_called_once()
+
+def test_write_bundle(fake_file, fake_profile):
+    processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4(), report_id="abc")
+    bundler = MagicMock() 
+    bundle_dict =  {"some-data": [], "other-data": "2"}
+    bundler.to_json.return_value = json.dumps(bundle_dict)
+    processor.write_bundle(bundler)
+    assert processor.bundle_file.exists()
+    assert json.loads(processor.bundle_file.read_text()) == bundle_dict

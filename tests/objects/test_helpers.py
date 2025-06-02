@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from rest_framework.test import APIRequestFactory
 from dogesec_commons.objects import conf
 from dogesec_commons.objects.helpers import positive_int, ArangoDBHelper
+from tests.objects.data import SRO_DATA
 from .utils import make_s2a_uploads, request_from_queries
 
 
@@ -537,8 +538,8 @@ def test_get_objects_by_id(sro_data, sdo_data, stix_id):
         request_from_queries(),
     )
     data = helper.get_objects_by_id(stix_id).data
-    assert data['page_results_count'] == 1
-    assert data['objects'][0]['id'] == stix_id
+    assert data["page_results_count"] == 1
+    assert data["objects"][0]["id"] == stix_id
 
 
 @pytest.fixture(scope="module")
@@ -648,3 +649,53 @@ def test_sro_filters(sro_data, filters, expected_ids):
         request_from_queries(**filters),
     )
     assert {obj["id"] for obj in helper.get_sros().data["objects"]} == set(expected_ids)
+
+
+@pytest.fixture(scope="module")
+def sro_data():
+    objects = SRO_DATA
+    with make_s2a_uploads(
+        [("test_sro_filters", objects)], truncate_collection=True
+    ) as s2a:
+        yield objects
+
+
+@pytest.fixture(scope="module")
+def bundle_data():
+    objects = SRO_DATA + [
+        {"id": "ex-type1--2", "type": "ex-type1"},
+        {"id": "ex-type2--2", "type": "ex-type2"},
+        {"id": "ex-type2--3", "type": "ex-type2"},
+        {"id": "ex-type3--3", "type": "ex-type3"},
+        {"id": "ex-type1--3", "type": "ex-type1"},
+    ]
+
+    with make_s2a_uploads(
+        [("test_bundle_filters", objects)], truncate_collection=True
+    ) as s2a:
+        yield objects
+
+
+@pytest.mark.parametrize(
+    ["stix_id", "filters", "expected_ids"],
+    [
+        [
+            "ex-type1--2",
+            None,
+            [
+                "ex-type1--2",
+                "ex-type2--2",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+            ],
+        ],
+    ],
+)
+def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
+    filters = filters or {}
+    helper = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(**filters),
+    )
+    assert {
+        obj["id"] for obj in helper.get_object_bundle(stix_id).data["objects"]
+    } == set(expected_ids)

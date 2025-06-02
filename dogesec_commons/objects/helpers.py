@@ -462,17 +462,32 @@ class ArangoDBHelper:
             bind_vars['types'] = types
 
 
+        
+        visible_to_filter = ''
+        if q := self.query.get('visible_to'):
+            bind_vars['visible_to'] = q
+            bind_vars['marking_visible_to_all'] = "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb", "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487"
+            visible_to_filter = 'FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL'
+
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
             FOR doc IN @@view
             SEARCH (doc._id IN bundle_ids OR (doc.id == @id AND doc._is_latest == TRUE)) // extra_search
+            // visible_to_filter
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, TRUE))
         """
         if rel_search_filters:
             query = query.replace('/* rel_search_extras */', ' AND ' + ' AND '.join(rel_search_filters))
         if search_filters:
-            query = query.replace('// extra_search', ' AND ' + ' AND '.join(search_filters))
+            query = query.replace(
+                "// extra_search", " AND " + " AND ".join(search_filters)
+            )
+        if visible_to_filter:
+            query = query.replace(
+                '// visible_to_filter',
+                visible_to_filter
+            )
         return self.execute_query(query, bind_vars=bind_vars)
 
     

@@ -173,6 +173,7 @@ class QueryParams:
         type=OpenApiTypes.STR, location=OpenApiParameter.PATH
     )
 
+    visible_to = OpenApiParameter('visible_to', description="Only show objects that are visible to the Identity `id` passed. e.g. passing `identity--b1ae1a15-6f4b-431e-b990-1b9678f35e15` would only show reports created by that identity (with any TLP level) or objects created by another identity ID but only if they are marked with `TLP:CLEAR` or `TLP:GREEN`."),
 
 
 @extend_schema_view(
@@ -194,7 +195,7 @@ class QueryParams:
             """
         ),
         responses=ArangoDBHelper.get_paginated_response_schema(),
-        parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param, QueryParams.all_types, QueryParams.include_embedded_refs],
+        parameters=ArangoDBHelper.get_schema_operation_parameters() + [QueryParams.object_id_param, QueryParams.all_types, QueryParams.include_embedded_refs, QueryParams.visible_to],
     )
 )
 class SingleObjectView(viewsets.ViewSet):

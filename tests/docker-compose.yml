@@ -1,0 +1,15 @@
+services:
+    pgdb:
+      image: postgres
+      ports:
+          - "15432:5432"
+      environment:
+        - POSTGRES_DB=postgres
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+    arangodb:
+      image: arangodb/arangodb
+      environment:
+        - ARANGO_ROOT_PASSWORD=
+      ports:
+          - "18529:8529"

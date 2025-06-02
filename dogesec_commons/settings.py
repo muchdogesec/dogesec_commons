@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dogesec_commons.stixifier',
+    'dogesec_commons.objects',
     'drf_spectacular',
 ]
 
@@ -76,11 +77,18 @@ WSGI_APPLICATION = 'dogesec_commons.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
+    
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),            # Database name
+        'USER': os.getenv('POSTGRES_USER'),          # Database user
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),  # Database password
+        'HOST': os.getenv('POSTGRES_HOST'),          # PostgreSQL service name in Docker Compose
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),  # PostgreSQL default port
+    },
+    
 }
 
 
@@ -145,3 +153,8 @@ REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+ARANGODB_DATABASE = os.getenv('ARANGODB_DATABASE')
+ARANGODB_USERNAME = os.getenv('ARANGODB_USERNAME')
+ARANGODB_PASSWORD = os.getenv('ARANGODB_PASSWORD')
+ARANGODB_HOST_URL = os.getenv("ARANGODB_HOST_URL")

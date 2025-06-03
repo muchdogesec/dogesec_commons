@@ -20,8 +20,6 @@ from dogesec_commons.objects.views import (
 from dogesec_commons.stixifier.models import Profile
 from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
 
-from parameterized import parameterized
-
 factory = APIRequestFactory()
 
 

@@ -660,14 +660,55 @@ def sro_data():
         yield objects
 
 
+green_ref, red_ref, clear_ref = (
+    "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+    "marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1",
+    "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+)
+
+
 @pytest.fixture(scope="module")
 def bundle_data():
     objects = SRO_DATA + [
         {"id": "ex-type1--2", "type": "ex-type1"},
-        {"id": "ex-type2--2", "type": "ex-type2"},
-        {"id": "ex-type2--3", "type": "ex-type2"},
+        {
+            "id": "ex-type2--2",
+            "type": "ex-type2",
+            "created_by_ref": "ref1",
+            "object_marking_refs": [green_ref],
+        },
+        {
+            "id": "ex-type2--3",
+            "type": "ex-type2",
+            "created_by_ref": "ref2",
+            "object_marking_refs": [red_ref],
+        },
         {"id": "ex-type3--3", "type": "ex-type3"},
-        {"id": "ex-type1--3", "type": "ex-type1"},
+        {
+            "id": "ex-type1--3",
+            "type": "ex-type1",
+            "created_by_ref": "ref2",
+            "object_marking_refs": [clear_ref],
+        },
+        {
+            "type": "relationship",
+            "id": "relationship--red",
+            "source_ref": "ex-type1--2",
+            "target_ref": "ex-type2--3",
+            "created_by_ref": "ref1",
+            "object_marking_refs": [red_ref],
+            "relationship_type": "exists-for",
+        },  # SRO3
+        {
+            "type": "relationship",
+            "id": "relationship--clear",
+            "_is_ref": True,
+            "source_ref": "ex-type1--2",
+            "target_ref": "ex-type1--3",
+            "created_by_ref": "ref2",
+            "relationship_type": "exists-for",
+            "object_marking_refs": [green_ref],
+        },  # SRO3
     ]
 
     with make_s2a_uploads(
@@ -679,15 +720,88 @@ def bundle_data():
 @pytest.mark.parametrize(
     ["stix_id", "filters", "expected_ids"],
     [
-        [
+        pytest.param(
             "ex-type1--2",
             None,
             [
                 "ex-type1--2",
                 "ex-type2--2",
+                "ex-type2--3",
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "relationship--red",
+                "ex-type1--3",
+                "relationship--clear",
             ],
-        ],
+            id='no filters'
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(visible_to="ref1"),
+            [
+                "ex-type1--2",
+                "ex-type2--2",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "relationship--red",
+                "ex-type1--3",
+                "relationship--clear",
+            ],
+            id='visible_to:ref1'
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(visible_to="ref2"),
+            [
+                "ex-type1--2",
+                "ex-type2--3",
+                "ex-type2--2",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--3",
+                "relationship--clear",
+            ],
+            id='visible_to:ref2'
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(visible_to="ref2", include_embedded_refs="false"),
+            [
+                "ex-type1--2",
+                "ex-type2--3",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type2--2",
+            ],
+            id='visible_to:ref2, include_embedded_refs:False'
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(types="ex-type2,relationship", include_embedded_refs="false"),
+            [
+                'relationship--red',
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type2--3",
+                "ex-type2--2",
+            ],
+            id='types:list[1], include_embedded_refs:False'
+        ),
+
+        pytest.param(
+            "ex-type1--2",
+            dict(types="ex-type2,relationship", include_embedded_refs="false", visible_to='ref1'),
+            [
+                'relationship--red',
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type2--2",
+            ],
+            id='types:list[1], include_embedded_refs:False, visible_to:ref1'
+        ),
+
+        pytest.param(
+            "ex-type1--2",
+            dict(types="ex-type2", include_embedded_refs="false", visible_to='ref1'),
+            [
+                "ex-type2--2",
+            ],
+            id='types:list[2], include_embedded_refs:False, visible_to:ref1'
+        ),
     ],
 )
 def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
@@ -696,6 +810,15 @@ def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
         conf.ARANGODB_DATABASE_VIEW,
         request_from_queries(**filters),
     )
+    objects = helper.get_object_bundle(stix_id).data["objects"]
     assert {
-        obj["id"] for obj in helper.get_object_bundle(stix_id).data["objects"]
+        obj["id"] for obj in objects
     } == set(expected_ids)
+
+    if visible_to := filters.get('visible_to'):
+        for obj in objects:
+            assert obj.get('created_by_ref') in [None, visible_to] or not set(obj.get('object_marking_refs', [])).isdisjoint([green_ref, clear_ref])
+    
+    if types := filters.get('types'):
+        types = types.split(',')
+        assert {obj['type'] for obj in objects} == set(types)

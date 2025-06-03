@@ -15,56 +15,60 @@ from django.conf import settings
 from rest_framework import decorators, response, status
 
 
-SDO_TYPES = set([
-    "attack-pattern",
-    "campaign",
-    "course-of-action",
-    "grouping",
-    "identity",
-    "incident",
-    "indicator",
-    "infrastructure",
-    "intrusion-set",
-    "location",
-    "malware",
-    "malware-analysis",
-    "note",
-    "observed-data",
-    "opinion",
-    "report",
-    "threat-actor",
-    "sighting",
-    "tool",
-    "vulnerability",
-    "weakness"
-])
+SDO_TYPES = set(
+    [
+        "attack-pattern",
+        "campaign",
+        "course-of-action",
+        "grouping",
+        "identity",
+        "incident",
+        "indicator",
+        "infrastructure",
+        "intrusion-set",
+        "location",
+        "malware",
+        "malware-analysis",
+        "note",
+        "observed-data",
+        "opinion",
+        "report",
+        "threat-actor",
+        "sighting",
+        "tool",
+        "vulnerability",
+        "weakness",
+    ]
+)
 
-SCO_TYPES = set([
-    "artifact",
-    "autonomous-system",
-    "bank-account",
-    "bank-card",
-    "cryptocurrency-transaction",
-    "cryptocurrency-wallet",
-    "directory",
-    "domain-name",
-    "email-addr",
-    "email-message",
-    "file",
-    "ipv4-addr",
-    "ipv6-addr",
-    "mac-addr",
-    "mutex",
-    "network-traffic",
-    "phone-number",
-    "process",
-    "software",
-    "url",
-    "user-account",
-    "user-agent",
-    "windows-registry-key",
-    "x509-certificate"
-])
+SCO_TYPES = set(
+    [
+        "artifact",
+        "autonomous-system",
+        "bank-account",
+        "bank-card",
+        "cryptocurrency-transaction",
+        "cryptocurrency-wallet",
+        "directory",
+        "domain-name",
+        "email-addr",
+        "email-message",
+        "file",
+        "ipv4-addr",
+        "ipv6-addr",
+        "mac-addr",
+        "mutex",
+        "network-traffic",
+        "phone-number",
+        "process",
+        "software",
+        "url",
+        "user-account",
+        "user-agent",
+        "windows-registry-key",
+        "x509-certificate",
+    ]
+)
 SDO_SORT_FIELDS = [
     "name_ascending",
     "name_descending",
@@ -73,7 +77,7 @@ SDO_SORT_FIELDS = [
     "modified_ascending",
     "modified_descending",
     "type_ascending",
-    "type_descending"
+    "type_descending",
 ]
 SRO_SORT_FIELDS = [
     "created_ascending",
@@ -83,10 +87,7 @@ SRO_SORT_FIELDS = [
 ]
 
 
-SCO_SORT_FIELDS = [
-    "type_ascending",
-    "type_descending"
-]
+SCO_SORT_FIELDS = ["type_ascending", "type_descending"]
 
 
 SMO_SORT_FIELDS = [
@@ -97,14 +98,16 @@ SMO_SORT_FIELDS = [
 ]
 
 
-
-SMO_TYPES = set([
-    "marking-definition",
-    "extension-definition",
-    "language-content",
-])
+SMO_TYPES = set(
+    [
+        "marking-definition",
+        "extension-definition",
+        "language-content",
+    ]
+)
 
 OBJECT_TYPES = SDO_TYPES.union(SCO_TYPES).union(["relationship"]).union(SMO_TYPES)
+
 
 def positive_int(integer_string, cutoff=None, default=1):
     """
@@ -119,45 +122,54 @@ def positive_int(integer_string, cutoff=None, default=1):
         return ret
     return default
 
+
 class ArangoDBHelper:
     max_page_size = conf.MAXIMUM_PAGE_SIZE
     page_size = conf.DEFAULT_PAGE_SIZE
-    SRO_OBJECTS_ONLY_LATEST = getattr(settings, 'SRO_OBJECTS_ONLY_LATEST', True)
+    SRO_OBJECTS_ONLY_LATEST = getattr(settings, "SRO_OBJECTS_ONLY_LATEST", True)
 
     @staticmethod
     def get_like_literal(str: str):
-        return str.replace('_', '\\_').replace('%', '\\%')
-    def get_sort_stmt(self, fields: list[str]):
+        return str.replace("_", "\\_").replace("%", "\\%")
+
+    def get_sort_stmt(self, sort_options: list[str], customs={}, doc_name="doc"):
         finder = re.compile(r"(.+)_((a|de)sc)ending")
-        sort_field = self.query.get('sort', fields[0])
-        if sort_field not in fields:
+        sort_field = self.query.get("sort", sort_options[0])
+        if sort_field not in sort_options:
             return ""
         if m := finder.match(sort_field):
             field = m.group(1)
             direction = m.group(2).upper()
-            return f"SORT doc.{field} {direction}"
+            if cfield := customs.get(field):
+                return f"SORT {cfield} {direction}"
+            return f"SORT {doc_name}.{field} {direction}"
 
     def query_as_array(self, key):
         query = self.query.get(key)
         if not query:
             return []
-        return query.split(',')
-    
+        return query.split(",")
+
     def query_as_bool(self, key, default=True):
         query_str = self.query.get(key)
         if not query_str:
             return default
-        return query_str.lower() == 'true'
+        return query_str.lower() in ["true", "yes", "1", "y"]
 
     @classmethod
-    def get_page_params(cls, request):
-        kwargs = request.GET.copy()
-        page_number = positive_int(kwargs.get('page'))
-        page_limit = positive_int(kwargs.get('page_size'), cutoff=ArangoDBHelper.max_page_size, default=ArangoDBHelper.page_size)
+    def get_page_params(cls, kwargs):
+        page_number = positive_int(kwargs.get("page"))
+        page_limit = positive_int(
+            kwargs.get("page_size"),
+            cutoff=ArangoDBHelper.max_page_size,
+            default=ArangoDBHelper.page_size,
+        )
         return page_number, page_limit
 
     @classmethod
-    def get_paginated_response(cls, data, page_number, page_size=page_size, full_count=0, result_key="objects"):
+    def get_paginated_response(
+        cls, data, page_number, page_size=page_size, full_count=0, result_key="objects"
+    ):
         return Response(
             {
                 "page_size": page_size or cls.page_size,
@@ -167,7 +179,6 @@ class ArangoDBHelper:
                 result_key: list(data),
             }
         )
-
 
     @classmethod
     def get_paginated_response_schema(cls, result_key="objects", schema=None):
@@ -194,10 +205,11 @@ class ArangoDBHelper:
                     },
                     result_key: {
                         "type": "array",
-                        "items": schema or {
+                        "items": schema
+                        or {
                             "type": "object",
                             "properties": {
-                                "type":{
+                                "type": {
                                     "example": "domain-name",
                                 },
                                 "id": {
@@ -205,24 +217,20 @@ class ArangoDBHelper:
                                 },
                             },
                             "additionalProperties": True,
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             },
             400: {
                 "type": "object",
                 "properties": {
-                    "detail": {
-                        "type": "string"
-                    },
-                    "code": {
-                        "type": "integer"
-                    }
+                    "detail": {"type": "string"},
+                    "code": {"type": "integer"},
                 },
                 "required": [
                     "code",
-                ]
-            }
+                ],
+            },
         }
 
     @classmethod
@@ -241,12 +249,7 @@ class ArangoDBHelper:
         ]
         return parameters
 
-
-
-
-    client = ArangoClient(
-        hosts=settings.ARANGODB_HOST_URL
-    )
+    client = ArangoClient(hosts=settings.ARANGODB_HOST_URL)
     DB_NAME = conf.DB_NAME
 
     def __init__(self, collection, request, result_key="objects") -> None:
@@ -257,54 +260,51 @@ class ArangoDBHelper:
             password=settings.ARANGODB_PASSWORD,
         )
         self.result_key = result_key
-        self.page, self.count = self.get_page_params(request)
         self.request = request
-        self.query = request.query_params.dict()
+        self.query = request.query_params.dict() if request else dict()
+        self.page, self.count = self.get_page_params(self.query)
 
     def execute_query(self, query, bind_vars={}, paginate=True):
         if paginate:
-            bind_vars['offset'], bind_vars['count'] = self.get_offset_and_count(self.count, self.page)
+            bind_vars["offset"], bind_vars["count"] = self.get_offset_and_count(
+                self.count, self.page
+            )
         try:
-            cursor = self.db.aql.execute(query, bind_vars=bind_vars, count=True, full_count=True)
+            cursor = self.db.aql.execute(
+                query, bind_vars=bind_vars, count=True, full_count=True
+            )
         except Exception as e:
             logging.exception(e)
             raise ValidationError("aql: cannot process request")
         if paginate:
-            return self.get_paginated_response(cursor, self.page, self.page_size, cursor.statistics()["fullCount"], result_key=self.result_key)
+            return self.get_paginated_response(
+                cursor,
+                self.page,
+                self.page_size,
+                cursor.statistics()["fullCount"],
+                result_key=self.result_key,
+            )
         return list(cursor)
 
     def get_offset_and_count(self, count, page) -> tuple[int, int]:
         page = page or 1
         if page >= 2**32:
             raise ValidationError(f"invalid page `{page}`")
-        offset = (page-1)*count
+        offset = (page - 1) * count
         return offset, count
-    
-    def get_reports(self, id=None):
-        bind_vars = {
-                "@collection": self.collection,
-                "type": 'report',
-        }
-        query = """
-            FOR doc in @@collection
-            FILTER doc.type == @type AND doc._is_latest
-            LIMIT @offset, @count
-            RETURN KEEP(doc, KEYS(doc, true))
-        """
-        return self.execute_query(query, bind_vars=bind_vars)
-        
+
     def get_scos(self, matcher={}):
         types = SCO_TYPES
         other_filters = []
 
-        if new_types := self.query_as_array('types'):
+        if new_types := self.query_as_array("types"):
             types = types.intersection(new_types)
         bind_vars = {
-                "@collection": self.collection,
-                "types": list(types),
+            "@collection": self.collection,
+            "types": list(types),
         }
-        if value := self.query.get('value'):
-            bind_vars['search_value'] = value.lower()
+        if value := self.query.get("value"):
+            bind_vars["search_value"] = value.lower()
             other_filters.append(
                 """
                 (
@@ -348,9 +348,8 @@ class ArangoDBHelper:
         #     matcher["_stixify_report_id"] = report_id
 
         if matcher:
-            bind_vars['matcher'] = matcher
+            bind_vars["matcher"] = matcher
             other_filters.insert(0, "MATCHES(doc, @matcher)")
-
 
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
@@ -368,10 +367,9 @@ class ArangoDBHelper:
         """
         return self.execute_query(query, bind_vars=bind_vars)
 
-    
     def get_smos(self):
         types = SMO_TYPES
-        if new_types := self.query_as_array('types'):
+        if new_types := self.query_as_array("types"):
             types = types.intersection(new_types)
         bind_vars = {
             "@collection": self.collection,
@@ -392,26 +390,24 @@ class ArangoDBHelper:
             RETURN  KEEP(doc, KEYS(doc, true))
         """
         return self.execute_query(query, bind_vars=bind_vars)
-    
-      
+
     def get_sdos(self):
         types = SDO_TYPES
-        if new_types := self.query_as_array('types'):
+        if new_types := self.query_as_array("types"):
             types = types.intersection(new_types)
-        
 
         bind_vars = {
             "@collection": self.collection,
             "types": list(types),
         }
         other_filters = []
-        search_filters = ['doc._is_latest == TRUE']
-        if term := self.query.get('labels'):
-            bind_vars['labels'] = term
+        search_filters = ["doc._is_latest == TRUE"]
+        if term := self.query.get("labels"):
+            bind_vars["labels"] = term
             other_filters.append("doc.labels[? ANY FILTER CONTAINS(CURRENT, @labels)]")
 
-        if term := self.query.get('name'):
-            bind_vars['name'] = "%" + self.get_like_literal(term) + '%'
+        if term := self.query.get("name"):
+            bind_vars["name"] = "%" + self.get_like_literal(term) + "%"
             search_filters.append("doc.name LIKE @name")
 
         if other_filters:
@@ -431,7 +427,7 @@ class ArangoDBHelper:
             RETURN  KEEP(doc, KEYS(doc, true))
         """
         return self.execute_query(query, bind_vars=bind_vars)
-    
+
     def get_objects_by_id(self, id):
         bind_vars = {
             "@view": self.collection,
@@ -445,22 +441,23 @@ class ArangoDBHelper:
             RETURN KEEP(doc, KEYS(doc, true))
         """
         return self.execute_query(query, bind_vars=bind_vars)
-    
-    def get_object_bundle(self, id):
+
+    def get_object_bundle(self, stix_id):
         bind_vars = {
             "@view": self.collection,
-            "id": id,
+            "id": stix_id,
         }
         rel_search_filters = []
         search_filters = []
-        if not self.query_as_bool('include_embedded_refs', True):
-            rel_search_filters.append('doc._is_ref != TRUE')
-        
-        if types := self.query_as_array('types'):
-            rel_search_filters.append('(doc._target_type IN @types OR doc._source_type IN @types)')
-            search_filters.append('doc.type IN @types')
-            bind_vars['types'] = types
+        if not self.query_as_bool("include_embedded_refs", True):
+            rel_search_filters.append("doc._is_ref != TRUE")
 
+        if types := self.query_as_array("types"):
+            rel_search_filters.append(
+                "(doc._target_type IN @types OR doc._source_type IN @types)"
+            )
+            search_filters.append("doc.type IN @types")
+            bind_vars["types"] = types
 
         
         visible_to_filter = ''
@@ -478,11 +475,14 @@ class ArangoDBHelper:
             RETURN KEEP(doc, KEYS(doc, TRUE))
         """
         if rel_search_filters:
-            query = query.replace('/* rel_search_extras */', ' AND ' + ' AND '.join(rel_search_filters))
+            query = query.replace(
+                "/* rel_search_extras */", " AND " + " AND ".join(rel_search_filters)
+            )
         if search_filters:
             query = query.replace(
                 "// extra_search", " AND " + " AND ".join(search_filters)
             )
+
         if visible_to_filter:
             query = query.replace(
                 '// visible_to_filter',
@@ -490,7 +490,6 @@ class ArangoDBHelper:
             )
         return self.execute_query(query, bind_vars=bind_vars)
 
-    
     def get_containing_reports(self, id):
         bind_vars = {
             "@view": self.collection,
@@ -508,41 +507,42 @@ class ArangoDBHelper:
             RETURN KEEP(report, KEYS(report, TRUE))
         """
         return self.execute_query(query, bind_vars=bind_vars)
-    
+
     def get_sros(self):
         bind_vars = {
             "@collection": self.collection,
         }
 
-        search_filters = ['doc._is_latest == TRUE']
-        
-        if terms := self.query_as_array('source_ref_type'):
-            bind_vars['source_ref_type'] = terms
-            search_filters.append('doc._source_type IN @source_ref_type')
-            
-        if terms := self.query_as_array('target_ref_type'):
-            bind_vars['target_ref_type'] = terms
-            search_filters.append('doc._target_type IN @target_ref_type')
+        search_filters = ["doc._is_latest == TRUE"]
 
-        if term := self.query.get('relationship_type'):
-            bind_vars['relationship_type'] = '%' + self.get_like_literal(term) + '%'
+        if terms := self.query_as_array("source_ref_type"):
+            bind_vars["source_ref_type"] = terms
+            search_filters.append("doc._source_type IN @source_ref_type")
+
+        if terms := self.query_as_array("target_ref_type"):
+            bind_vars["target_ref_type"] = terms
+            search_filters.append("doc._target_type IN @target_ref_type")
+
+        if term := self.query.get("relationship_type"):
+            bind_vars["relationship_type"] = "%" + self.get_like_literal(term) + "%"
             search_filters.append("doc.relationship_type LIKE @relationship_type")
 
+        if not self.query_as_bool("include_embedded_refs", True):
+            search_filters.append("doc._is_ref != TRUE")
 
-        if not self.query_as_bool('include_embedded_refs', True):
-            search_filters.append('doc._is_ref != TRUE')
+        if term := self.query.get("target_ref"):
+            bind_vars["target_ref"] = term
+            search_filters.append("doc.target_ref == @target_ref")
 
-        if term := self.query.get('target_ref'):
-            bind_vars['target_ref'] = term
-            search_filters.append('doc.target_ref == @target_ref')
-
-        if term := self.query.get('source_ref'):
-            bind_vars['source_ref'] = term
-            search_filters.append('doc.source_ref == @source_ref')
+        if term := self.query.get("source_ref"):
+            bind_vars["source_ref"] = term
+            search_filters.append("doc.source_ref == @source_ref")
 
         if not self.SRO_OBJECTS_ONLY_LATEST:
-            search_filters[0] = '(doc._is_latest == TRUE OR doc._target_type IN @sco_types OR doc._source_type IN @sco_types)'
-            bind_vars['sco_types'] = list(SCO_TYPES)
+            search_filters[0] = (
+                "(doc._is_latest == TRUE OR doc._target_type IN @sco_types OR doc._source_type IN @sco_types)"
+            )
+            bind_vars["sco_types"] = list(SCO_TYPES)
 
         query = f"""
             FOR doc in @@collection
@@ -557,28 +557,6 @@ class ArangoDBHelper:
 
         """
         return self.execute_query(query, bind_vars=bind_vars)
-    
-    
-    def get_post_objects(self, post_id, feed_id):
-        types = self.query.get('types', "")
-        bind_vars = {
-            "@view": self.collection,
-            "matcher": dict(_obstracts_post_id=str(post_id), _obstracts_feed_id=str(feed_id)),
-            "types": list(OBJECT_TYPES.intersection(types.split(","))) if types else None,
-        }
-        query = """
-            FOR doc in @@view
-            FILTER doc.type IN @types OR NOT @types
-            FILTER MATCHES(doc, @matcher)
-
-            COLLECT id = doc.id INTO docs
-            LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC RETURN d)
-
-            LIMIT @offset, @count
-            RETURN KEEP(doc, KEYS(doc, true))
-        """
-        return self.execute_query(query, bind_vars=bind_vars)
-    
 
     def delete_report_object(self, report_id, object_id):
         db_service = ArangoDBService(
@@ -615,12 +593,12 @@ class ArangoDBHelper:
             "object_id": object_id,
             "report_id": report_id,
         }
-        report_idkey, doc_id, ids_to_be_removed = self.execute_query(query, bind_vars=bind_vars, paginate=False)[0]
+        report_idkey, doc_id, ids_to_be_removed = self.execute_query(
+            query, bind_vars=bind_vars, paginate=False
+        )[0]
         # separate into collections
         collections = {}
-        bind_vars = {
-            'ckeys': {}
-        }
+        bind_vars = {"ckeys": {}}
         queries = []
         stix_ids = []
         for key_id, stix_id in ids_to_be_removed:
@@ -629,18 +607,33 @@ class ArangoDBHelper:
                 db_service.db.delete_document(key_id)
             except Exception as e:
                 logging.exception("failed to delete object %s", key_id)
-        
+
         if not stix_ids:
             return response.Response(status=status.HTTP_204_NO_CONTENT)
-        resp = self.execute_query("""
-                                FOR doc in @@collection FILTER doc._id == @report_idkey
-                                    UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
-                                    RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
-                                  """, bind_vars={'report_idkey': report_idkey, 'stix_ids': stix_ids, '@collection': report_idkey.split('/')[0]}, paginate=False)
-        logging.info(f"removed references from report.object_refs: {resp} // {ids_to_be_removed}")
+        resp = self.execute_query(
+            """
+            FOR doc in @@collection FILTER doc._id == @report_idkey
+                UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
+                RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
+                """,
+            bind_vars={
+                "report_idkey": report_idkey,
+                "stix_ids": stix_ids,
+                "@collection": report_idkey.split("/")[0],
+            },
+            paginate=False,
+        )
+        logging.info(
+            f"removed references from report.object_refs: {resp} // {ids_to_be_removed}"
+        )
         if doc_id:
-            doc_collection_name = doc_id[0].split('/')[0]
-            db_service.update_is_latest_several_chunked(list(set([object_id]+stix_ids)), doc_collection_name, doc_collection_name.removesuffix('_vertex_collection').removesuffix('_edge_collection')+'_edge_collection')
+            doc_collection_name = doc_id[0].split("/")[0]
+            db_service.update_is_latest_several_chunked(
+                list(set([object_id] + stix_ids)),
+                doc_collection_name,
+                doc_collection_name.removesuffix("_vertex_collection").removesuffix(
+                    "_edge_collection"
+                )
+                + "_edge_collection",
+            )
         return response.Response(status=status.HTTP_204_NO_CONTENT)
-
-

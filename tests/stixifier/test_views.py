@@ -5,7 +5,7 @@ import pytest
 from rest_framework.test import APIRequestFactory
 from rest_framework import status
 from rest_framework.response import Response
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from rest_framework.test import APITestCase, URLPatternsTestCase
 from rest_framework import routers
 
@@ -18,7 +18,9 @@ from dogesec_commons.objects.views import (
     SingleObjectView,
 )
 from dogesec_commons.stixifier.models import Profile
-from dogesec_commons.stixifier.views import ProfileView
+from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
+
+from parameterized import parameterized
 
 factory = APIRequestFactory()
 
@@ -38,7 +40,7 @@ def get_profile_data():
     }
 
 
-class SingleObjectsViewTest(TransactionTestCase, URLPatternsTestCase):
+class ProfileViewTest(TransactionTestCase, URLPatternsTestCase):
     router = routers.SimpleRouter()
     router.register("", ProfileView, "profiles-view")
     urlpatterns = [
@@ -85,3 +87,51 @@ class SingleObjectsViewTest(TransactionTestCase, URLPatternsTestCase):
 
         response = self.client.get(f"/profiles/{p.id}/")
         assert response.status_code == 404, "should already be deleted"
+
+
+
+class ExtractorsViewTest(URLPatternsTestCase):
+    router = routers.SimpleRouter()
+    router.register("", ExtractorsView, "extractors-view")
+    urlpatterns = [
+        path("extractors/", include(router.urls)),
+    ]
+
+    
+    def list_extractor_tester(self, filters):
+        response = self.client.get(f"/extractors/", query_params=filters)
+        assert response.status_code == 200
+        extractors = response.data['extractors']
+
+        if type := filters.get('type'):
+            assert {ex['type'] for ex in extractors} == {type}
+
+        if (web_app := filters.get('web_app', None)) != None:
+            assert {ex.get('dogesec_web') for ex in extractors} == {web_app}
+
+        if name := filters.get('name'):
+            for ex in extractors:
+                assert name.lower() in ex.get('name', '').lower()
+
+    def test_list_extractors(self):
+        filters = [
+            dict(name='ipv4'),
+            dict(name='ipv4', web_app=True),
+            dict(),
+            dict(type='ai'),
+            dict(type='pattern'),
+            dict(type='lookup'),
+        ]
+        for filter in filters:
+            with self.subTest(f'test_filters: {filter}', filters=filters):
+                self.list_extractor_tester(filter)
+
+
+    def test_retrieve_extractor(self):
+        with patch.object(ExtractorsView, 'get_all') as mock_get_all:
+            extractor_id = 'mocked_id'
+            mocked_extractor = {'name': 'this should be the response'}
+            mock_get_all.return_value = {extractor_id: mocked_extractor}
+            response = self.client.get(f"/extractors/{extractor_id}/")
+            assert response.status_code == 200
+            extractors = response.data == mocked_extractor

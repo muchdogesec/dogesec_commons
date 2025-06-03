@@ -341,12 +341,6 @@ class ArangoDBHelper:
                 """.strip()
             )
 
-        # if post_id := self.query.get('post_id'):
-        #     matcher["_obstracts_post_id"] = post_id
-
-        # if report_id := self.query.get('report_id'):
-        #     matcher["_stixify_report_id"] = report_id
-
         if matcher:
             bind_vars["matcher"] = matcher
             other_filters.insert(0, "MATCHES(doc, @matcher)")
@@ -456,7 +450,7 @@ class ArangoDBHelper:
             rel_search_filters.append(
                 "(doc._target_type IN @types OR doc._source_type IN @types)"
             )
-            search_filters.append("doc.type IN @types")
+            search_filters.append("FILTER doc.type IN @types")
             bind_vars["types"] = types
 
         
@@ -469,7 +463,8 @@ class ArangoDBHelper:
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
             FOR doc IN @@view
-            SEARCH (doc._id IN bundle_ids OR (doc.id == @id AND doc._is_latest == TRUE)) // extra_search
+            SEARCH (doc._id IN bundle_ids OR (doc.id == @id AND doc._is_latest == TRUE))
+            // extra_search
             // visible_to_filter
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, TRUE))
@@ -480,7 +475,7 @@ class ArangoDBHelper:
             )
         if search_filters:
             query = query.replace(
-                "// extra_search", " AND " + " AND ".join(search_filters)
+                "// extra_search", "\n".join(search_filters)
             )
 
         if visible_to_filter:

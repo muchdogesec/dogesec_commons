@@ -187,7 +187,7 @@ def test_summarize_success(fake_file, fake_profile):
     mock_bundler.report.object_marking_refs = []
     mock_bundler.report.labels = []
     mock_bundler.report.confidence = 90
-    mock_bundler.report.name = "Report Name"
+    mock_bundler.report.name = "Dummy Random Report Name"
     processor.bundler = mock_bundler
 
     with patch(
@@ -198,7 +198,23 @@ def test_summarize_success(fake_file, fake_profile):
         mock_parser.return_value = mock_summary
         summary = processor.summarize()
         assert summary == "summary"
-        mock_bundler.add_ref.assert_called()
+        assert mock_bundler.add_ref.call_count == 2
+        objects_added = [c[0][0] for c in mock_bundler.add_ref.call_args_list]
+        note_obj = objects_added[0]
+        assert note_obj["type"] == "note"
+        assert note_obj["id"] == "note--abc"
+        for k in ['created', 'modified', 'created_by_ref', 'object_marking_refs', 'labels', 'confidence']:
+            assert note_obj[k] == getattr(mock_bundler.report, k)
+        assert note_obj['content'] == summary
+        assert note_obj['abstract'] == "AI Summary: Dummy Random Report Name"
+        assert objects_added[1] == mock_bundler.new_relationship.return_value
+        mock_bundler.new_relationship.assert_called_once_with(
+            note_obj["id"],
+            mock_bundler.report.id,
+            relationship_type="summary-of",
+            description=f"AI generated summary for {mock_bundler.report.name}",
+            external_references=note_obj["external_references"],
+        )
 
 
 def test_write_bundle(fake_file, fake_profile):
@@ -225,25 +241,27 @@ def test_upload_to_arango(fake_file, fake_profile):
         mock_instance.run.assert_called()
         assert mock_link.call_count == 2
 
+
 def test_process(fake_file, fake_profile):
     processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4(), report_id="abc")
-    with patch.object(StixifyProcessor, 'file2txt') as mock_f2t, patch.object(
-        StixifyProcessor, 'txt2stix'
-    ) as mock_t2s, patch.object(
-        StixifyProcessor, 'summarize'
-    ) as mock_summarize, patch.object(
-        StixifyProcessor, 'write_bundle'
-    ), patch.object(StixifyProcessor, 'upload_to_arango') as mock_upload_to_arango:
+    with (
+        patch.object(StixifyProcessor, "file2txt") as mock_f2t,
+        patch.object(StixifyProcessor, "txt2stix") as mock_t2s,
+        patch.object(StixifyProcessor, "summarize") as mock_summarize,
+        patch.object(StixifyProcessor, "write_bundle"),
+        patch.object(StixifyProcessor, "upload_to_arango") as mock_upload_to_arango,
+    ):
         assert processor.process() == mock_t2s.return_value.report.id
         mock_f2t.assert_called_once()
         mock_t2s.assert_called_once()
         mock_summarize.assert_called_once()
         mock_upload_to_arango.assert_called_once()
 
+
 def test_write_bundle(fake_file, fake_profile):
     processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4(), report_id="abc")
-    bundler = MagicMock() 
-    bundle_dict =  {"some-data": [], "other-data": "2"}
+    bundler = MagicMock()
+    bundle_dict = {"some-data": [], "other-data": "2"}
     bundler.to_json.return_value = json.dumps(bundle_dict)
     processor.write_bundle(bundler)
     assert processor.bundle_file.exists()

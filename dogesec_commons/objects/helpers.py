@@ -131,6 +131,10 @@ class ArangoDBHelper:
     @staticmethod
     def get_like_literal(str: str):
         return str.replace("_", "\\_").replace("%", "\\%")
+    
+    @classmethod
+    def like_string(cls, string: str):
+        return "%" + cls.get_like_literal(string) + "%"
 
     def get_sort_stmt(self, sort_options: list[str], customs={}, doc_name="doc"):
         finder = re.compile(r"(.+)_((a|de)sc)ending")
@@ -280,7 +284,7 @@ class ArangoDBHelper:
             return self.get_paginated_response(
                 cursor,
                 self.page,
-                self.page_size,
+                self.count,
                 cursor.statistics()["fullCount"],
                 result_key=self.result_key,
             )

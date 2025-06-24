@@ -838,3 +838,24 @@ def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
     if types := filters.get('types'):
         types = types.split(',')
         assert {obj['type'] for obj in objects} == set(types)
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/objects/sdos/",
+        "/objects/sros/"
+    ]
+)
+@pytest.mark.parametrize(
+    "identity_ref",
+    [
+        "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
+        "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+        "identity--bad-identity",
+    ]
+)
+def test_visible_to(client, path, identity_ref):
+    resp = client.get(path, query_params=dict(visible_to=identity_ref))
+    objects = resp.data["objects"]
+    for obj in objects:
+        assert obj.get('created_by_ref') in [None, identity_ref] or not set(obj.get('object_marking_refs', [])).isdisjoint([green_ref, clear_ref])

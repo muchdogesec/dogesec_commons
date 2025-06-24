@@ -315,7 +315,7 @@ class ObjectsWithReportsView(SingleObjectView):
     list=extend_schema(
         responses=ArangoDBHelper.get_paginated_response_schema(),
         parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + QueryParams.SDO_PARAMS,
+        + QueryParams.SDO_PARAMS + [QueryParams.visible_to],
         summary="Search and filter STIX Domain Objects",
         description=textwrap.dedent(
             """
@@ -410,7 +410,7 @@ class SMOView(viewsets.ViewSet):
     list=extend_schema(
         responses=ArangoDBHelper.get_paginated_response_schema(),
         parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + QueryParams.SRO_PARAMS,
+        + QueryParams.SRO_PARAMS + [QueryParams.visible_to],
         summary="Search and filter STIX Relationship Objects",
         description=textwrap.dedent(
             """

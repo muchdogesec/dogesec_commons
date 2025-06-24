@@ -128,17 +128,17 @@ class ArangoDBHelper:
     page_size = conf.DEFAULT_PAGE_SIZE
     SRO_OBJECTS_ONLY_LATEST = getattr(settings, "SRO_OBJECTS_ONLY_LATEST", True)
     STIX_OBJECT_SCHEMA = {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "example": "domain-name",
-                },
-                "id": {
-                    "example": "domain-name--a86627d4-285b-5358-b332-4e33f3ec1075",
-                },
+        "type": "object",
+        "properties": {
+            "type": {
+                "example": "domain-name",
             },
-            "additionalProperties": True,
-        }
+            "id": {
+                "example": "domain-name--a86627d4-285b-5358-b332-4e33f3ec1075",
+            },
+        },
+        "additionalProperties": True,
+    }
 
     @staticmethod
     def get_like_literal(str: str):
@@ -409,6 +409,16 @@ class ArangoDBHelper:
             bind_vars["name"] = "%" + self.get_like_literal(term) + "%"
             search_filters.append("doc.name LIKE @name")
 
+        if q := self.query.get("visible_to"):
+            bind_vars["visible_to"] = q
+            bind_vars["marking_visible_to_all"] = (
+                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+            )
+            search_filters.append(
+                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+            )
+
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
 
@@ -425,6 +435,7 @@ class ArangoDBHelper:
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
         """
+        # return HttpResponse(f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_objects_by_id(self, id):
@@ -543,6 +554,16 @@ class ArangoDBHelper:
             )
             bind_vars["sco_types"] = list(SCO_TYPES)
 
+        if q := self.query.get("visible_to"):
+            bind_vars["visible_to"] = q
+            bind_vars["marking_visible_to_all"] = (
+                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+            )
+            search_filters.append(
+                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+            )
+
         query = f"""
             FOR doc in @@collection
             SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
@@ -555,6 +576,7 @@ class ArangoDBHelper:
             RETURN KEEP(doc, KEYS(doc, true))
 
         """
+        # return HttpResponse(content=f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
 
     def delete_report_object(self, report_id, object_id):

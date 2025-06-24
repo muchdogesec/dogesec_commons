@@ -7,6 +7,7 @@ from dogesec_commons.objects import conf
 from dogesec_commons.objects.helpers import positive_int, ArangoDBHelper
 from tests.objects.data import SRO_DATA
 from .utils import make_s2a_uploads, request_from_queries
+from rest_framework.exceptions import NotFound
 
 
 def test_get_objects_uses_view_and_has_no_duplicates(subtests):
@@ -538,8 +539,23 @@ def test_get_objects_by_id(sro_data, sdo_data, stix_id):
         request_from_queries(),
     )
     data = helper.get_objects_by_id(stix_id).data
-    assert data["page_results_count"] == 1
-    assert data["objects"][0]["id"] == stix_id
+    assert data["id"] == stix_id
+
+@pytest.mark.parametrize(
+    "stix_id",
+    [
+        "bad_id1",
+        "bad_id2",
+        "bad_id3",
+    ]
+)
+def test_get_objects_by_id__bad_id(sro_data, sdo_data, stix_id):
+    helper = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(),
+    )
+    with pytest.raises(NotFound):
+        data = helper.get_objects_by_id(stix_id).data
 
 
 @pytest.fixture(scope="module")

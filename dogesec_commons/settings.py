@@ -152,6 +152,7 @@ SPECTACULAR_SETTINGS = {
 REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': "dogesec_commons.utils.custom_exception_handler",
 }
 
 ARANGODB_DATABASE = os.getenv('ARANGODB_DATABASE')

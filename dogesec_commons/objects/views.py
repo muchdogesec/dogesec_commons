@@ -1,4 +1,5 @@
 from dogesec_commons.objects import conf
+from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE
 from .helpers import (
     OBJECT_TYPES,
     ArangoDBHelper,
@@ -210,9 +211,8 @@ class QueryParams:
             Get a STIX Object by its ID
             """
         ),
-        responses=ArangoDBHelper.get_paginated_response_schema(),
-        parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + [QueryParams.object_id_param],
+        responses={200: ArangoDBHelper.STIX_OBJECT_SCHEMA, 404: DEFAULT_400_RESPONSE, 400: DEFAULT_400_RESPONSE},
+        parameters=[QueryParams.object_id_param],
     ),
     bundle=extend_schema(
         summary="Get STIX Object's Bundle",

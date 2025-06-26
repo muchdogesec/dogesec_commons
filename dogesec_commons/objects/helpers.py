@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiParameter
 from ..utils.pagination import Pagination
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from stix2arango.services import ArangoDBService
 from . import conf
 
@@ -127,10 +127,26 @@ class ArangoDBHelper:
     max_page_size = conf.MAXIMUM_PAGE_SIZE
     page_size = conf.DEFAULT_PAGE_SIZE
     SRO_OBJECTS_ONLY_LATEST = getattr(settings, "SRO_OBJECTS_ONLY_LATEST", True)
+    STIX_OBJECT_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "type": {
+                "example": "domain-name",
+            },
+            "id": {
+                "example": "domain-name--a86627d4-285b-5358-b332-4e33f3ec1075",
+            },
+        },
+        "additionalProperties": True,
+    }
 
     @staticmethod
     def get_like_literal(str: str):
         return str.replace("_", "\\_").replace("%", "\\%")
+
+    @classmethod
+    def like_string(cls, string: str):
+        return "%" + cls.get_like_literal(string) + "%"
 
     def get_sort_stmt(self, sort_options: list[str], customs={}, doc_name="doc"):
         finder = re.compile(r"(.+)_((a|de)sc)ending")
@@ -182,6 +198,7 @@ class ArangoDBHelper:
 
     @classmethod
     def get_paginated_response_schema(cls, result_key="objects", schema=None):
+
         return {
             200: {
                 "type": "object",
@@ -205,19 +222,7 @@ class ArangoDBHelper:
                     },
                     result_key: {
                         "type": "array",
-                        "items": schema
-                        or {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "example": "domain-name",
-                                },
-                                "id": {
-                                    "example": "domain-name--a86627d4-285b-5358-b332-4e33f3ec1075",
-                                },
-                            },
-                            "additionalProperties": True,
-                        },
+                        "items": schema or cls.STIX_OBJECT_SCHEMA,
                     },
                 },
             },
@@ -280,7 +285,7 @@ class ArangoDBHelper:
             return self.get_paginated_response(
                 cursor,
                 self.page,
-                self.page_size,
+                self.count,
                 cursor.statistics()["fullCount"],
                 result_key=self.result_key,
             )
@@ -404,6 +409,16 @@ class ArangoDBHelper:
             bind_vars["name"] = "%" + self.get_like_literal(term) + "%"
             search_filters.append("doc.name LIKE @name")
 
+        if q := self.query.get("visible_to"):
+            bind_vars["visible_to"] = q
+            bind_vars["marking_visible_to_all"] = (
+                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+            )
+            search_filters.append(
+                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+            )
+
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
 
@@ -420,6 +435,7 @@ class ArangoDBHelper:
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
         """
+        # return HttpResponse(f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_objects_by_id(self, id):
@@ -430,11 +446,13 @@ class ArangoDBHelper:
         query = """
             FOR doc in @@view
             SEARCH doc.id == @id AND doc._is_latest == TRUE
-            LET _unused = [@offset, @count]
             LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
-        return self.execute_query(query, bind_vars=bind_vars)
+        objs = self.execute_query(query, bind_vars=bind_vars, paginate=False)
+        if not objs:
+            raise NotFound("No object with id")
+        return Response(objs[0])
 
     def get_object_bundle(self, stix_id):
         bind_vars = {
@@ -453,12 +471,14 @@ class ArangoDBHelper:
             search_filters.append("FILTER doc.type IN @types")
             bind_vars["types"] = types
 
-        
-        visible_to_filter = ''
-        if q := self.query.get('visible_to'):
-            bind_vars['visible_to'] = q
-            bind_vars['marking_visible_to_all'] = "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb", "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487"
-            visible_to_filter = 'FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL'
+        visible_to_filter = ""
+        if q := self.query.get("visible_to"):
+            bind_vars["visible_to"] = q
+            bind_vars["marking_visible_to_all"] = (
+                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+            )
+            visible_to_filter = "FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL"
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -474,15 +494,10 @@ class ArangoDBHelper:
                 "/* rel_search_extras */", " AND " + " AND ".join(rel_search_filters)
             )
         if search_filters:
-            query = query.replace(
-                "// extra_search", "\n".join(search_filters)
-            )
+            query = query.replace("// extra_search", "\n".join(search_filters))
 
         if visible_to_filter:
-            query = query.replace(
-                '// visible_to_filter',
-                visible_to_filter
-            )
+            query = query.replace("// visible_to_filter", visible_to_filter)
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_containing_reports(self, id):
@@ -539,6 +554,16 @@ class ArangoDBHelper:
             )
             bind_vars["sco_types"] = list(SCO_TYPES)
 
+        if q := self.query.get("visible_to"):
+            bind_vars["visible_to"] = q
+            bind_vars["marking_visible_to_all"] = (
+                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+            )
+            search_filters.append(
+                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+            )
+
         query = f"""
             FOR doc in @@collection
             SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
@@ -551,6 +576,7 @@ class ArangoDBHelper:
             RETURN KEEP(doc, KEYS(doc, true))
 
         """
+        # return HttpResponse(content=f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
 
     def delete_report_object(self, report_id, object_id):

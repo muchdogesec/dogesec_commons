@@ -32,6 +32,7 @@ class Profile(models.Model):
     relationship_mode = models.CharField(choices=RelationshipMode.choices, max_length=20, default=RelationshipMode.STANDARD)
     extract_text_from_image = models.BooleanField(default=False)
     defang = models.BooleanField()
+    generate_pdf = models.BooleanField(default=False)
     ai_settings_relationships = models.CharField(max_length=256, blank=False, null=True)
     ai_settings_extractions = ArrayField(base_field=models.CharField(max_length=256), default=list)
     ai_content_check_provider = models.CharField(default=None, null=True, blank=False, max_length=256)

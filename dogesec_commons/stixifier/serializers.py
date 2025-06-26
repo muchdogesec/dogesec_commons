@@ -105,6 +105,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     ignore_embedded_relationships     = serializers.BooleanField(required=False, help_text="applies to SDO and SCO types (default is `false`)")
     ignore_embedded_relationships_sro = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on `relationship` object types (default is `true`)")
     ignore_embedded_relationships_smo = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on SMO object types (`marking-definition`, `extension-definition`, `language-content`) (default is `true`)")
+    generate_pdf = serializers.BooleanField(required=False, help_text="Whether or not to generate pdf file for input, applies to both stixify and obstracts (default is `false`)")
 
     class Meta:
         model = Profile

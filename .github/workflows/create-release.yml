@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
-      
+
     steps:
       - uses: actions/checkout@v4
 
@@ -81,7 +81,7 @@ jobs:
             | awk '{print $2}' \
             | while read old_tag; do
                 echo "Deleting old beta tag: $old_tag"
-                git push origin :refs/tags/$old_tag
+                gh release delete $old_tag --cleanup-tag --yes
               done
 
       - name: Publish package distributions to PyPI

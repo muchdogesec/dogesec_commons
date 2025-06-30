@@ -36,7 +36,7 @@ jobs:
         id: release-tag
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.get-version.outputs.version }}" >> $GITHUB_OUTPUT
           else
             echo "tag=${{ steps.get-version.outputs.version }}-beta-$(date +"%Y-%m-%d-%H-%M-%S")" >> $GITHUB_OUTPUT
           fi

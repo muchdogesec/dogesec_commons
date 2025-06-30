@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - '**'  # run on all branches
+      
 jobs:
   create-release:
     runs-on: ubuntu-latest
@@ -66,5 +67,5 @@ jobs:
               done
 
       - name: Publish package distributions to PyPI
-        if: github.ref_name == 'main'
+        # if: github.ref_name == 'main'
         uses: pypa/gh-action-pypi-publish@release/v1

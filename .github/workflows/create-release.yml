@@ -41,14 +41,6 @@ jobs:
             echo "tag=${{ steps.get-version.outputs.version }}-beta-$(date +"%Y-%m-%d-%H-%M-%S")" >> $GITHUB_OUTPUT
           fi
 
-      - name: Rename artifacts if main branch
-        if: github.ref_name == 'main'
-        run: |
-          WHL=$(ls dist/*.whl)
-          SDIST=$(ls dist/*.tar.gz)
-          mv "$WHL" "dist/dogesec_commons-latest-py3-none-any.whl"
-          mv "$SDIST" "dist/dogesec_commons-latest.tar.gz"
-
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

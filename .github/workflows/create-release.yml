@@ -41,6 +41,14 @@ jobs:
             echo "tag=${{ steps.get-version.outputs.version }}-beta-$(date +"%Y-%m-%d-%H-%M-%S")" >> $GITHUB_OUTPUT
           fi
 
+      - name: Rename artifacts if main branch
+        if: github.ref_name == 'main'
+        run: |
+          WHL=$(ls dist/*.whl)
+          SDIST=$(ls dist/*.tar.gz)
+          mv "$WHL" "dist/dogesec_commons-latest-py3-none-any.whl"
+          mv "$SDIST" "dist/dogesec_commons-latest.tar.gz"
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,3 +56,18 @@ jobs:
           TAG="${{ steps.release-tag.outputs.tag }}"
           gh release create "$TAG" --repo "${{ github.repository }}" --notes ""
           gh release upload "$TAG" dist/** --repo "${{ github.repository }}"
+
+      - name: Clean up old beta releases (keep latest 10)
+        if: github.ref_name != 'main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release list --limit 100 --repo "${{ github.repository }}" --json tagName,createdAt \
+            | jq -r '.[] | select(.tagName | test("-beta-")) | [.tagName, .createdAt] | @tsv' \
+            | sort -k2 -r \
+            | tail -n +11 \
+            | cut -f1 \
+            | while read old_tag; do
+                echo "Deleting old beta release: $old_tag"
+                gh release delete "$old_tag" --repo "${{ github.repository }}" --yes
+              done

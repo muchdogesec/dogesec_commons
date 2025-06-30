@@ -11,7 +11,6 @@ authors = [
 maintainers = [
   { name = "dogesec", email = "noreply@dogesec.com" }
 ]
-urls = { dogesec hq = "https://dogesec.com" }
 description = "A package containing views we reuse between various dogesec products"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,6 +34,8 @@ allow-direct-references = true
 [project.urls]
 Homepage = "https://github.com/muchdogesec/dogesec_commons"
 Issues = "https://github.com/muchdogesec/dogesec_commons/issues"
+dogesec HQ = "https://dogesec.com"
+
 
 [project.optional-dependencies]
 stixifier = [

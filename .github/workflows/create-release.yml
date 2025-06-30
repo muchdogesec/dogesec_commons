@@ -66,5 +66,5 @@ jobs:
               done
 
       - name: Publish package distributions to PyPI
-        # if: github.ref_name == 'main'
+        if: github.ref_name == 'main'
         uses: pypa/gh-action-pypi-publish@release/v1

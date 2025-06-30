@@ -55,7 +55,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release list --limit 100 --repo "${{ github.repository }}" --json tagName,createdAt \
-            | jq -r '.[] | select(.tagName | test("main-")) | [.tagName, .createdAt] | @tsv' \
+            | jq -r '.[] | select(.tagName | test("-beta-")) | [.tagName, .createdAt] | @tsv' \
             | sort -k2 -r \
             | tail -n +11 \
             | cut -f1 \

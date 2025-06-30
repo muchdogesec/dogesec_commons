@@ -34,7 +34,7 @@ allow-direct-references = true
 [project.urls]
 Homepage = "https://github.com/muchdogesec/dogesec_commons"
 Issues = "https://github.com/muchdogesec/dogesec_commons/issues"
-dogesec HQ = "https://dogesec.com"
+"dogesec HQ" = "https://dogesec.com"
 
 
 [project.optional-dependencies]

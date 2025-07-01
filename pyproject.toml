@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dogesec_commons"
-version = "1.0.2"
+version = "1.0.3"
 authors = [
-  { name = "dogesec", email = "noreply@dogesec.com" }
+  { name = "dogesec" }
 ]
 maintainers = [
-  { name = "dogesec", email = "noreply@dogesec.com" }
+  { name = "dogesec" }
 ]
 description = "A package containing views we reuse between various dogesec products"
 readme = "README.md"

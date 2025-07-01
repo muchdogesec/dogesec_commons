@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'  # run on all branches
-      
+      - 'main'
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
@@ -23,12 +23,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install build dependencies
-        run: python3 -m pip install build tomli --user
+        run: python3 -m pip install build hatchling
 
       - name: Extract version from pyproject.toml
         id: get-version
         run: |
-          VERSION=$(python3 -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          VERSION=$(python -m hatchling version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build package
@@ -54,7 +54,7 @@ jobs:
       - name: Clean up old beta releases (keep latest 10)
         if: github.ref_name != 'main'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release list --limit 100 --repo "${{ github.repository }}" --json tagName,createdAt \
             | jq -r '.[] | select(.tagName | test("-beta-")) | [.tagName, .createdAt] | @tsv' \
@@ -67,5 +67,5 @@ jobs:
               done
 
       - name: Publish package distributions to PyPI
-        # if: github.ref_name == 'main'
+        if: github.ref_name == 'main'
         uses: pypa/gh-action-pypi-publish@release/v1

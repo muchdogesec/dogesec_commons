@@ -40,7 +40,7 @@ Issues = "https://github.com/muchdogesec/dogesec_commons/issues"
 [project.optional-dependencies]
 stixifier = [
     "txt2stix",
-    "dogesec-file2txt",
+    "file2txt",
     "stix2arango",
 ]
 

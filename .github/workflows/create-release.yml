@@ -6,11 +6,13 @@ on:
   push:
     branches:
       - '**'  # run on all branches
+      
 jobs:
   create-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -61,24 +63,9 @@ jobs:
             | cut -f1 \
             | while read old_tag; do
                 echo "Deleting old beta release: $old_tag"
-                gh release delete "$old_tag" --repo "${{ github.repository }}" --yes
+                gh release delete "$old_tag" --repo "${{ github.repository }}" --cleanup-tag --yes
               done
 
-      - name: Clean up old beta tags (keep latest 10)
-        if: github.ref_name != 'main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api repos/${{ github.repository }}/tags --paginate \
-            | jq -r '.[].name' \
-            | grep -- "-beta-" \
-            | while read tag; do
-                echo "$(gh api repos/${{ github.repository }}/git/refs/tags/$tag | jq -r '.object.date // empty') $tag"
-              done \
-            | sort -r \
-            | tail -n +11 \
-            | awk '{print $2}' \
-            | while read old_tag; do
-                echo "Deleting old beta tag: $old_tag"
-                git push origin :refs/tags/$old_tag
-              done
+      - name: Publish package distributions to PyPI
+        # if: github.ref_name == 'main'
+        uses: pypa/gh-action-pypi-publish@release/v1

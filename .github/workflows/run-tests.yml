@@ -59,7 +59,7 @@ jobs:
           export ARANGODB_HOST_URL="http://${{ steps.get_ip.outputs.IP_ADDRESS }}:18529"
 
 
-          pip install -e .[test]
+          pip install -e . -r tests/requirements.in
 
 
           pytest --cov --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy tests/

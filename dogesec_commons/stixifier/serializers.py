@@ -93,7 +93,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         required=False,
         help_text='check content before proceeding'
     )
-    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=True)
+    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=False)
     extractions = serializers.ListField(
         min_length=1,
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),

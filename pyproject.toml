@@ -44,7 +44,7 @@ stixifier = [
     "stix2arango",
 ]
 
-test = [
+tests = [
     "pytest",
     "pytest-subtests",
     "pytest-cov",

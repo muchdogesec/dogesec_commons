@@ -1,12 +1,9 @@
 import random
-import time
 import pytest
-from unittest.mock import MagicMock, patch
-from rest_framework.test import APIRequestFactory
 from dogesec_commons.objects import conf
-from dogesec_commons.objects.helpers import positive_int, ArangoDBHelper
+from dogesec_commons.objects.helpers import ArangoDBHelper
 from tests.objects.data import SRO_DATA
-from .utils import make_s2a_uploads, request_from_queries
+from tests.objects.utils import make_s2a_uploads, request_from_queries
 from rest_framework.exceptions import NotFound
 
 
@@ -542,13 +539,14 @@ def test_get_objects_by_id(sro_data, sdo_data, stix_id):
     data = helper.get_objects_by_id(stix_id).data
     assert data["id"] == stix_id
 
+
 @pytest.mark.parametrize(
     "stix_id",
     [
         "bad_id1",
         "bad_id2",
         "bad_id3",
-    ]
+    ],
 )
 def test_get_objects_by_id__bad_id(sro_data, sdo_data, stix_id):
     helper = ArangoDBHelper(
@@ -749,7 +747,7 @@ def bundle_data():
                 "ex-type1--3",
                 "relationship--clear",
             ],
-            id='no filters'
+            id="no filters",
         ),
         pytest.param(
             "ex-type1--2",
@@ -762,7 +760,7 @@ def bundle_data():
                 "ex-type1--3",
                 "relationship--clear",
             ],
-            id='visible_to:ref1'
+            id="visible_to:ref1",
         ),
         pytest.param(
             "ex-type1--2",
@@ -775,7 +773,7 @@ def bundle_data():
                 "ex-type1--3",
                 "relationship--clear",
             ],
-            id='visible_to:ref2'
+            id="visible_to:ref2",
         ),
         pytest.param(
             "ex-type1--2",
@@ -786,38 +784,40 @@ def bundle_data():
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type2--2",
             ],
-            id='visible_to:ref2, include_embedded_refs:False'
+            id="visible_to:ref2, include_embedded_refs:False",
         ),
         pytest.param(
             "ex-type1--2",
             dict(types="ex-type2,relationship", include_embedded_refs="false"),
             [
-                'relationship--red',
+                "relationship--red",
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type2--3",
                 "ex-type2--2",
             ],
-            id='types:list[1], include_embedded_refs:False'
+            id="types:list[1], include_embedded_refs:False",
         ),
-
         pytest.param(
             "ex-type1--2",
-            dict(types="ex-type2,relationship", include_embedded_refs="false", visible_to='ref1'),
+            dict(
+                types="ex-type2,relationship",
+                include_embedded_refs="false",
+                visible_to="ref1",
+            ),
             [
-                'relationship--red',
+                "relationship--red",
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type2--2",
             ],
-            id='types:list[1], include_embedded_refs:False, visible_to:ref1'
+            id="types:list[1], include_embedded_refs:False, visible_to:ref1",
         ),
-
         pytest.param(
             "ex-type1--2",
-            dict(types="ex-type2", include_embedded_refs="false", visible_to='ref1'),
+            dict(types="ex-type2", include_embedded_refs="false", visible_to="ref1"),
             [
                 "ex-type2--2",
             ],
-            id='types:list[2], include_embedded_refs:False, visible_to:ref1'
+            id="types:list[2], include_embedded_refs:False, visible_to:ref1",
         ),
     ],
 )
@@ -828,35 +828,32 @@ def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
         request_from_queries(**filters),
     )
     objects = helper.get_object_bundle(stix_id).data["objects"]
-    assert {
-        obj["id"] for obj in objects
-    } == set(expected_ids)
+    assert {obj["id"] for obj in objects} == set(expected_ids)
 
-    if visible_to := filters.get('visible_to'):
+    if visible_to := filters.get("visible_to"):
         for obj in objects:
-            assert obj.get('created_by_ref') in [None, visible_to] or not set(obj.get('object_marking_refs', [])).isdisjoint([green_ref, clear_ref])
-    
-    if types := filters.get('types'):
-        types = types.split(',')
-        assert {obj['type'] for obj in objects} == set(types)
+            assert obj.get("created_by_ref") in [None, visible_to] or not set(
+                obj.get("object_marking_refs", [])
+            ).isdisjoint([green_ref, clear_ref])
 
-@pytest.mark.parametrize(
-    "path",
-    [
-        "/objects/sdos/",
-        "/objects/sros/"
-    ]
-)
+    if types := filters.get("types"):
+        types = types.split(",")
+        assert {obj["type"] for obj in objects} == set(types)
+
+
+@pytest.mark.parametrize("path", ["/objects/sdos/", "/objects/sros/"])
 @pytest.mark.parametrize(
     "identity_ref",
     [
         "identity--c78cb6e5-0c4b-4611-8297-d1b8b55e40b5",
         "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
         "identity--bad-identity",
-    ]
+    ],
 )
 def test_visible_to(client, path, identity_ref):
     resp = client.get(path, query_params=dict(visible_to=identity_ref))
     objects = resp.data["objects"]
     for obj in objects:
-        assert obj.get('created_by_ref') in [None, identity_ref] or not set(obj.get('object_marking_refs', [])).isdisjoint([green_ref, clear_ref])
+        assert obj.get("created_by_ref") in [None, identity_ref] or not set(
+            obj.get("object_marking_refs", [])
+        ).isdisjoint([green_ref, clear_ref])

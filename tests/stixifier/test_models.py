@@ -2,11 +2,6 @@ import uuid
 import pytest
 from django.core.exceptions import ValidationError
 from dogesec_commons.stixifier import models
-from pytest_django.fixtures import skip_if_no_django, SettingsWrapper
-from unittest import mock
-
-
-
 
 
 @pytest.mark.django_db

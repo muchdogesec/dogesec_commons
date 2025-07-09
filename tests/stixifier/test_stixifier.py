@@ -27,24 +27,22 @@ def fake_file():
 @pytest.fixture
 def fake_profile(db):
     return Profile.objects.create(
-        name = "test-profile",
-        extract_text_from_image = False,
-        defang = False,
-        ignore_image_refs = False,
-        ignore_link_refs = False,
-        extractions = [],
-        ai_content_check_provider = None,
-        ai_create_attack_flow = False,
-        ai_settings_extractions = [],
-        ai_settings_relationships = None,
-        relationship_mode = RelationshipMode.STANDARD,
-        ignore_extraction_boundary = False,
-        ignore_embedded_relationships = False,
-        ignore_embedded_relationships_smo = False,
-        ignore_embedded_relationships_sro = False,
+        name="test-profile",
+        extract_text_from_image=False,
+        defang=False,
+        ignore_image_refs=False,
+        ignore_link_refs=False,
+        extractions=[],
+        ai_content_check_provider=None,
+        ai_create_attack_flow=False,
+        ai_settings_extractions=[],
+        ai_settings_relationships=None,
+        relationship_mode=RelationshipMode.STANDARD,
+        ignore_extraction_boundary=False,
+        ignore_embedded_relationships=False,
+        ignore_embedded_relationships_smo=False,
+        ignore_embedded_relationships_sro=False,
     )
-
-    # return FakeProfile()
 
 
 def test_init(fake_file, fake_profile):

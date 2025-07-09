@@ -2,13 +2,12 @@ import uuid
 from django.urls import include, path
 import pytest
 from rest_framework.test import APIRequestFactory
-from rest_framework import status
 from rest_framework.response import Response
 from unittest.mock import patch
-from rest_framework.test import APITestCase, URLPatternsTestCase
+from rest_framework.test import URLPatternsTestCase
 from rest_framework import routers
 
-from dogesec_commons.objects.views import ObjectsWithReportsView, SCOView, SDOView, SMOView, SROView, SingleObjectView
+from dogesec_commons.objects.views import ObjectsWithReportsView, SCOView, SDOView, SMOView, SROView
 
 factory = APIRequestFactory()
 

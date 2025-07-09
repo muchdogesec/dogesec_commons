@@ -2,11 +2,6 @@ import uuid
 import pytest
 from django.core.exceptions import ValidationError
 from dogesec_commons.stixifier import models
-from pytest_django.fixtures import skip_if_no_django, SettingsWrapper
-from unittest import mock
-
-
-
 
 
 @pytest.mark.django_db
@@ -20,7 +15,6 @@ class TestProfileModel:
             ai_settings_relationships="default",
             ai_settings_extractions=["ex1"],
             ai_content_check_provider="provider",
-            ai_summary_provider="summary_provider",
         )
         assert isinstance(profile.id, uuid.UUID)
         assert profile.name == "Test Profile"
@@ -36,7 +30,6 @@ class TestProfileModel:
             ai_settings_relationships="r",
             ai_settings_extractions=[],
             ai_content_check_provider="p",
-            ai_summary_provider="s",
         )
         profile1.save()
         profile_1_id = profile1.id
@@ -49,7 +42,6 @@ class TestProfileModel:
             ai_settings_relationships="r",
             ai_settings_extractions=[],
             ai_content_check_provider="p",
-            ai_summary_provider="s",
         )
         profile2.save()
         assert profile_1_id == profile2.id

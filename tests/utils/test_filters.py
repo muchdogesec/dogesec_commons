@@ -1,9 +1,7 @@
-import pytest
 from unittest.mock import MagicMock
 from datetime import datetime
 from django.utils.timezone import make_aware
 from dogesec_commons.utils.filters import MinMaxDateFilter
-
 
 
 def test_filter_queryset_with_minmax_dates():
@@ -42,11 +40,9 @@ def test_filter_queryset_with_minmax_dates():
         created__lte=expected_lte,
     )
 
-
-
     mock_request.query_params = {
         "created_min": "2024-01-01T00:00:00Z",
-        "modified_max": "2024-01-05T00:00:00Z"
+        "modified_max": "2024-01-05T00:00:00Z",
     }
     mock_qs.filter.reset_mock()
     result = filter_backend.filter_queryset(mock_request, mock_qs, mock_view)
@@ -55,10 +51,9 @@ def test_filter_queryset_with_minmax_dates():
         modified__lte=expected_lte,
     )
 
-
     mock_request.query_params = {
         "bad_field_min": "2024-01-01T00:00:00Z",
-        "modified_max": "2024-01-05T00:00:00Z"
+        "modified_max": "2024-01-05T00:00:00Z",
     }
     mock_qs.filter.reset_mock()
     result = filter_backend.filter_queryset(mock_request, mock_qs, mock_view)

@@ -1,7 +1,6 @@
 import random
 import pytest
 from unittest.mock import MagicMock, patch
-from rest_framework.test import APIRequestFactory
 from dogesec_commons.objects.helpers import positive_int, ArangoDBHelper
 
 
@@ -17,7 +16,6 @@ from dogesec_commons.objects.helpers import positive_int, ArangoDBHelper
 )
 def test_positive_int(value, cutoff, default, expected):
     assert positive_int(value, cutoff, default) == expected
-
 
 
 @patch("dogesec_commons.objects.helpers.ArangoDBHelper.client")

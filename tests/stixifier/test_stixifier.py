@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch, MagicMock
+from dogesec_commons.stixifier.models import Profile, RelationshipMode
 
 from txt2stix import txt2stixBundler
 
@@ -24,26 +25,24 @@ def fake_file():
 
 
 @pytest.fixture
-def fake_profile():
-    class FakeProfile:
-        name = "test-profile"
-        extract_text_from_image = False
-        defang = False
-        ignore_image_refs = False
-        ignore_link_refs = False
-        extractions = []
-        ai_content_check_provider = None
-        ai_create_attack_flow = False
-        ai_settings_extractions = []
-        ai_settings_relationships = None
-        relationship_mode = None
-        ignore_extraction_boundary = False
-        ai_summary_provider = None
-        ignore_embedded_relationships = False
-        ignore_embedded_relationships_smo = False
-        ignore_embedded_relationships_sro = False
-
-    return FakeProfile()
+def fake_profile(db):
+    return Profile.objects.create(
+        name="test-profile",
+        extract_text_from_image=False,
+        defang=False,
+        ignore_image_refs=False,
+        ignore_link_refs=False,
+        extractions=[],
+        ai_content_check_provider=None,
+        ai_create_attack_flow=False,
+        ai_settings_extractions=[],
+        ai_settings_relationships=None,
+        relationship_mode=RelationshipMode.STANDARD,
+        ignore_extraction_boundary=False,
+        ignore_embedded_relationships=False,
+        ignore_embedded_relationships_smo=False,
+        ignore_embedded_relationships_sro=False,
+    )
 
 
 def test_init(fake_file, fake_profile):
@@ -93,6 +92,8 @@ def test_txt2stix(fake_file, fake_profile, settings):
     fake_profile.ignore_extraction_boundary = True
     fake_profile.ai_settings_relationships = "relationship-model"
     fake_profile.relationship_mode = "full"
+    fake_profile.ai_extract_if_no_incidence = False
+    fake_profile.save()
 
     processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4())
     processor.output_md = "This is a markdown"
@@ -167,7 +168,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
             ai_settings_relationships="parsed(relationship-model)",
             relationship_mode="full",
             ignore_extraction_boundary=True,
-            always_extract=False,
+            ai_extract_if_no_incidence=False,
         )
 
         assert processor.txt2stix_data == mock_run.return_value

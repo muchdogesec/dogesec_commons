@@ -33,7 +33,6 @@ def get_profile_data():
         "ai_settings_relationships": None,
         "ai_settings_extractions": [],
         "ai_content_check_provider": None,
-        "ai_summary_provider": None,
         "ai_create_attack_flow": False,
     }
 

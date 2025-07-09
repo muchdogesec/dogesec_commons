@@ -58,7 +58,7 @@ class StixifyProcessor:
         file2txt_mode="html",
         report_id=None,
         base_url=None,
-        always_extract=False,
+        **kwargs,
     ) -> None:
         self.job_id = str(job_id)
         self.extra_data = dict()
@@ -77,7 +77,6 @@ class StixifyProcessor:
         self.filename.write_bytes(file.read())
 
         self.task_name = f"{self.profile.name}/{job_id}/{self.report_id}"
-        self.always_extract = always_extract
 
     def setup(self, /, report_prop: ReportProperties, extra={}):
         self.extra_data.update(extra)
@@ -151,58 +150,11 @@ class StixifyProcessor:
             and txt2stix.txt2stix.parse_model(self.profile.ai_settings_relationships),
             relationship_mode=self.profile.relationship_mode,
             ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
-            always_extract=self.always_extract,
+            ai_extract_if_no_incidence=self.profile.ai_extract_if_no_incidence,
         )
         self.summary = self.txt2stix_data.content_check.summary
         self.incident = self.txt2stix_data.content_check
         return self.bundler
-
-    def summarize(self):
-        if self.profile.ai_summary_provider:
-            logging.info(
-                f"summarizing report {self.report_id} using `{self.profile.ai_summary_provider}`"
-            )
-            try:
-                report = self.bundler.report
-                summary_extractor = parse_summarizer_model(
-                    self.profile.ai_summary_provider
-                )
-                self.summary = summary_extractor.summarize(self.output_md)
-                summary_note_obj = {
-                    "type": "note",
-                    "spec_version": "2.1",
-                    "id": report.id.replace("report", "note"),
-                    "created": report.created,
-                    "modified": report.modified,
-                    "created_by_ref": report.created_by_ref,
-                    "external_references": [
-                        {
-                            "source_name": "txt2stix_ai_summary_provider",
-                            "external_id": self.profile.ai_summary_provider,
-                        },
-                    ],
-                    "abstract": f"AI Summary: {report.name}",
-                    "content": self.summary,
-                    "object_refs": [report.id],
-                    "object_marking_refs": report.object_marking_refs,
-                    "labels": report.labels,
-                    "confidence": report.confidence,
-                }
-
-                self.bundler.add_ref(summary_note_obj)
-                self.bundler.add_ref(
-                    self.bundler.new_relationship(
-                        summary_note_obj["id"],
-                        report.id,
-                        relationship_type="summary-of",
-                        description=f"AI generated summary for {report.name}",
-                        external_references=summary_note_obj["external_references"],
-                    )
-                )
-            except BaseException as e:
-                print(f"got err {e}")
-                logging.info(f"got err {e}", exc_info=True)
-        return self.summary
 
     def process(self) -> str:
         logging.info(f"running file2txt on {self.task_name}")

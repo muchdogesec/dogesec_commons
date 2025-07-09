@@ -87,6 +87,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         required=False,
         help_text='check content before proceeding'
     )
+    ai_extract_if_no_incidence = serializers.BooleanField(default=True, help_text="(boolean, default `true`) if content check decides the report is not related to cyber security intelligence (e.g. vendor marketing), then you can use this setting to decide wether or not script should proceed. Setting to `false` will stop processing. It is designed to save AI tokens processing unknown content at scale in an automated way.")
     ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=False)
     extractions = serializers.ListField(
         min_length=1,

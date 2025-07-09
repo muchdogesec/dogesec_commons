@@ -81,19 +81,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         help_text='(required if AI extractions enabled) passed in format provider[:model] e.g. openai:gpt4o. Can pass more than one value to get extractions from multiple providers. model part is optional',
         required=False,
     )
-    ai_summary_provider = serializers.CharField(
-        validators=[validate_model],
-        help_text='you can optionally get an AI model to produce a summary of the blog. You must pass the request in format `provider:model`. model part is optional',
-        allow_null=True,
-        required=False,
-    )
     ai_content_check_provider = serializers.CharField(
         max_length=256, validators=[validate_model],
         allow_null=True,
         required=False,
         help_text='check content before proceeding'
     )
-    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=True)
+    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=False)
     extractions = serializers.ListField(
         min_length=1,
         child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),

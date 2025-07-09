@@ -7,8 +7,6 @@ import shutil
 import uuid
 from attr import dataclass
 
-from dogesec_commons.stixifier.summarizer import parse_summarizer_model
-
 from ..objects import db_view_creator
 from . import models
 import tempfile
@@ -155,6 +153,7 @@ class StixifyProcessor:
             ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
             always_extract=self.always_extract,
         )
+        self.summary = self.txt2stix_data.content_check.summary
         self.incident = self.txt2stix_data.content_check
         return self.bundler
 
@@ -209,8 +208,7 @@ class StixifyProcessor:
         logging.info(f"running file2txt on {self.task_name}")
         self.file2txt()
         logging.info(f"running txt2stix on {self.task_name}")
-        bundler = self.txt2stix()
-        self.summarize()
+        bundler: txt2stixBundler = self.txt2stix()
         self.write_bundle(bundler)
         logging.info(f"uploading {self.task_name} to arangodb via stix2arango")
         self.upload_to_arango()

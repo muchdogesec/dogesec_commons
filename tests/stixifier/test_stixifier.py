@@ -172,49 +172,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
 
         assert processor.txt2stix_data == mock_run.return_value
         assert processor.incident == mock_run.return_value.content_check
-
-
-def test_summarize_success(fake_file, fake_profile):
-    fake_profile.ai_summary_provider = "test-model"
-    processor = StixifyProcessor(fake_file, fake_profile, uuid.uuid4())
-    processor.output_md = "Some markdown"
-    processor.report_id = "1234"
-    mock_bundler = MagicMock()
-    mock_bundler.report.id = "report--abc"
-    mock_bundler.report.created = "2023-01-01T00:00:00Z"
-    mock_bundler.report.modified = "2023-01-01T00:00:00Z"
-    mock_bundler.report.created_by_ref = "identity--xyz"
-    mock_bundler.report.object_marking_refs = []
-    mock_bundler.report.labels = []
-    mock_bundler.report.confidence = 90
-    mock_bundler.report.name = "Dummy Random Report Name"
-    processor.bundler = mock_bundler
-
-    with patch(
-        "dogesec_commons.stixifier.stixifier.parse_summarizer_model"
-    ) as mock_parser:
-        mock_summary = MagicMock()
-        mock_summary.summarize.return_value = "summary"
-        mock_parser.return_value = mock_summary
-        summary = processor.summarize()
-        assert summary == "summary"
-        assert mock_bundler.add_ref.call_count == 2
-        objects_added = [c[0][0] for c in mock_bundler.add_ref.call_args_list]
-        note_obj = objects_added[0]
-        assert note_obj["type"] == "note"
-        assert note_obj["id"] == "note--abc"
-        for k in ['created', 'modified', 'created_by_ref', 'object_marking_refs', 'labels', 'confidence']:
-            assert note_obj[k] == getattr(mock_bundler.report, k)
-        assert note_obj['content'] == summary
-        assert note_obj['abstract'] == "AI Summary: Dummy Random Report Name"
-        assert objects_added[1] == mock_bundler.new_relationship.return_value
-        mock_bundler.new_relationship.assert_called_once_with(
-            note_obj["id"],
-            mock_bundler.report.id,
-            relationship_type="summary-of",
-            description=f"AI generated summary for {mock_bundler.report.name}",
-            external_references=note_obj["external_references"],
-        )
+        assert processor.summary == mock_run.return_value.content_check.summary
 
 
 def test_write_bundle(fake_file, fake_profile):
@@ -247,14 +205,12 @@ def test_process(fake_file, fake_profile):
     with (
         patch.object(StixifyProcessor, "file2txt") as mock_f2t,
         patch.object(StixifyProcessor, "txt2stix") as mock_t2s,
-        patch.object(StixifyProcessor, "summarize") as mock_summarize,
         patch.object(StixifyProcessor, "write_bundle"),
         patch.object(StixifyProcessor, "upload_to_arango") as mock_upload_to_arango,
     ):
         assert processor.process() == mock_t2s.return_value.report.id
         mock_f2t.assert_called_once()
         mock_t2s.assert_called_once()
-        mock_summarize.assert_called_once()
         mock_upload_to_arango.assert_called_once()
 
 

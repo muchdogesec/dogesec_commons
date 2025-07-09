@@ -188,6 +188,7 @@ def test_get_objects_uses_view_and_has_no_duplicates(subtests):
                     "vulnerability--1162f86e-c825-4b20-a69e-ea8a6d9d3948",
                     ## default identity
                     "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                    "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
                 },
             )
 

@@ -8,7 +8,6 @@ from rest_framework.validators import ValidationError
 
 def test_validate_model():
     assert validate_model('openai') == 'openai'
-    assert validate_model('deepseek') == 'deepseek'
     assert validate_model('') == None
     with pytest.raises(ValidationError):
         validate_model('random:10s')

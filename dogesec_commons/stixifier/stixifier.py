@@ -152,8 +152,8 @@ class StixifyProcessor:
             ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
             ai_extract_if_no_incidence=self.profile.ai_extract_if_no_incidence,
         )
-        self.summary = self.txt2stix_data.content_check.summary
         self.incident = self.txt2stix_data.content_check
+        self.summary = self.incident and self.incident.summary
         return self.bundler
 
     def process(self) -> str:

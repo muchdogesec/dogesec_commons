@@ -38,6 +38,7 @@ class Profile(models.Model):
     ai_content_check_provider = models.CharField(default=None, null=True, blank=False, max_length=256)
     ai_extract_if_no_incidence = models.BooleanField(default=True)
     ai_create_attack_flow = models.BooleanField(default=False)
+    ai_create_attack_navigator_layer = models.BooleanField(default=False)
     ignore_image_refs = models.BooleanField(default=True)
     ignore_link_refs  = models.BooleanField(default=True)
     ignore_extraction_boundary  = models.BooleanField(default=False)

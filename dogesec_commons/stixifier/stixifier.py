@@ -144,6 +144,7 @@ class StixifyProcessor:
             ai_content_check_provider=self.profile.ai_content_check_provider
             and txt2stix.txt2stix.parse_model(self.profile.ai_content_check_provider),
             ai_create_attack_flow=self.profile.ai_create_attack_flow,
+            ai_create_attack_navigator_layer=self.profile.ai_create_attack_navigator_layer,
             input_token_limit=settings.INPUT_TOKEN_LIMIT,
             ai_settings_extractions=ai_extractors,
             ai_settings_relationships=self.profile.ai_settings_relationships

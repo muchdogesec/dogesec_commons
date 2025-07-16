@@ -163,6 +163,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
             {},
             ai_content_check_provider=None,
             ai_create_attack_flow=True,
+            ai_create_attack_navigator_layer=False,
             input_token_limit=settings.INPUT_TOKEN_LIMIT,
             ai_settings_extractions=["parsed(some-ai-model)"],
             ai_settings_relationships="parsed(relationship-model)",

@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-umqh5d5yygalt#x%ekanq_liz6c17fts)w!p=i4d$2ll%t2kro'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -151,8 +151,9 @@ SPECTACULAR_SETTINGS = {
 
 REST_FRAMEWORK = {
     # YOUR SETTINGS
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'dogesec_commons.utils.autoschema.CustomAutoSchema',
     'EXCEPTION_HANDLER': "dogesec_commons.utils.custom_exception_handler",
+    'DEFAULT_AUTHENTICATION_CLASSES': []
 }
 
 ARANGODB_DATABASE = os.getenv('ARANGODB_DATABASE')

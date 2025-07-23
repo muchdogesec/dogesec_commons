@@ -65,10 +65,7 @@ def override_transport(monkeypatch, client):
 
 @pytest.mark.django_db(transaction=True)
 @schema.parametrize()
-def test_api(case: schemathesis.Case, **kwargs):
-    for k, v in kwargs.items():
-        if k in case.path_parameters:
-            case.path_parameters[k] = v
+def test_api(case: schemathesis.Case):
     case.call_and_validate(
         excluded_checks=[negative_data_rejection, positive_data_acceptance]
     )

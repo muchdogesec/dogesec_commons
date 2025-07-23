@@ -16,7 +16,7 @@ schema = schemathesis.openapi.from_wsgi(
     wsgi_app,
 )
 schema.config.base_url = "http://localhost:8005/"
-schema.config.generation = GenerationConfig(allow_x00=True)
+schema.config.generation = GenerationConfig(allow_x00=False)
 
 
 @pytest.fixture(autouse=True)

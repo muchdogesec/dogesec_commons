@@ -15,6 +15,8 @@ from django.conf import settings
 from rest_framework import decorators, response, status
 
 
+ATTACK_FLOW_TYPES = ["attack-flow", "attack-action"]
+
 SDO_TYPES = set(
     [
         "attack-pattern",
@@ -39,6 +41,7 @@ SDO_TYPES = set(
         "vulnerability",
         "weakness",
     ]
+    + ATTACK_FLOW_TYPES
 )
 
 SCO_TYPES = set(
@@ -106,7 +109,9 @@ SMO_TYPES = set(
     ]
 )
 
-OBJECT_TYPES = SDO_TYPES.union(SCO_TYPES).union(["relationship"]).union(SMO_TYPES)
+OBJECT_TYPES = (
+    SDO_TYPES.union(SCO_TYPES).union(["relationship"]).union(SMO_TYPES).union()
+)
 
 
 def positive_int(integer_string, cutoff=None, default=1):

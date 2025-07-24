@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework import routers
 from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
@@ -43,3 +44,10 @@ urlpatterns = [
     # Optional UI:
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
+
+
+def handler404(*args, **kwargs):
+    return JsonResponse(dict(code=404, message='non-existent page'), status=404)
+
+def handler500(*args, **kwargs):
+    return JsonResponse(dict(code=500, message='internal server error'), status=500)

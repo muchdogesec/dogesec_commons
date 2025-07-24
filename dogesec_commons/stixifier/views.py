@@ -68,7 +68,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             You cannot modify a profile once it is created. If you need to make changes, you should create another profile with the changes made. If it is essential that the same `name` + `identity_id` value be used, then you must first delete the profile in order to recreate it.
             """
         ),
-        responses={400: DEFAULT_400_ERROR, 200: ProfileSerializer}
+        responses={400: DEFAULT_400_ERROR, 201: ProfileSerializer}
     ),
     destroy=extend_schema(
         summary="Delete a profile",
@@ -120,7 +120,7 @@ class txt2stixView(mixins.RetrieveModelMixin,
 
     @classmethod
     def all_extractors(cls, types):
-        return Txt2stixExtractorSerializer.all_extractors(types)
+        return Txt2stixExtractorSerializer.all_extractors(tuple(types))
 
     def get_all(self):
         raise NotImplementedError("not implemented")

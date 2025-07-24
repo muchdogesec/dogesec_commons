@@ -20,6 +20,7 @@ from django.conf import settings
 
 import textwrap
 
+OBJECT_ID_PATTERN = r"[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
 class QueryParams:
     value = OpenApiParameter(
@@ -194,6 +195,7 @@ class QueryParams:
         description="Filter by the STIX object ID. e.g. `ipv4-addr--ba6b3f21-d818-4e7c-bfff-765805177512`, `indicator--7bff059e-6963-4b50-b901-4aba20ce1c01`",
         type=OpenApiTypes.STR,
         location=OpenApiParameter.PATH,
+        pattern=OBJECT_ID_PATTERN,
     )
 
     visible_to = OpenApiParameter(
@@ -235,7 +237,7 @@ class SingleObjectView(viewsets.ViewSet):
     lookup_url_kwarg = "object_id"
     openapi_tags = ["Objects"]
     lookup_value_regex = (
-        r"[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+        OBJECT_ID_PATTERN
     )
 
     def retrieve(self, request, *args, **kwargs):

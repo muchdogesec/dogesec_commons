@@ -1,6 +1,6 @@
 import argparse
 import contextlib
-from functools import partial
+from functools import lru_cache, partial
 import uuid
 from rest_framework import serializers
 
@@ -167,6 +167,7 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     dogesec_web = serializers.BooleanField(required=False, allow_null=True)
 
     @classmethod
+    @lru_cache(maxsize=10)
     def all_extractors(cls, types):
         retval = {}
         extractors = txt2stix.extractions.parse_extraction_config(

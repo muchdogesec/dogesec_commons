@@ -45,3 +45,14 @@ class CommonErrorSerializer(serializers.Serializer):
     message = serializers.CharField(required=False)
     code    = serializers.IntegerField(required=True)
     details = serializers.JSONField(required=False)
+
+
+class JSONSchemaSerializer(serializers.Serializer):
+    """
+    This is not a serializer but a way to use JSON schema as serializer not for parsing but for drf_spectacular schema in dogesec_commons.utils.autoschema.CustomAutoSchema
+    """
+    json_schema = None
+    def get_schema(self):
+        if self.json_schema:
+            return self.json_schema
+        raise NotImplementedError("user is expected to set json_schema or return a valid json schema")

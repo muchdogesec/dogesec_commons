@@ -204,6 +204,17 @@ class QueryParams:
         type=OpenApiTypes.STR,
     )
 
+    identity_ids = OpenApiParameter(
+        "identity_ids",
+        many=True,
+        explode=False,
+        description=textwrap.dedent(
+            """
+            Filter the results by created_by_ref
+            """
+        ),
+    )
+
 
 @extend_schema_view(
     retrieve=extend_schema(
@@ -270,7 +281,7 @@ class SingleObjectView(viewsets.ViewSet):
             },
         ),
         parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + [QueryParams.object_id_param],
+        + [QueryParams.object_id_param, QueryParams.identity_ids],
         summary="Get all Reports that contain this STIX Object",
         description=textwrap.dedent(
             """

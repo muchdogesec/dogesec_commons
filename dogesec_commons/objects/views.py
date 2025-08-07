@@ -210,7 +210,7 @@ class QueryParams:
         explode=False,
         description=textwrap.dedent(
             """
-            Filter the results by created_by_ref
+            Filter the results by the objects `created_by_ref` property. Pass an Identity object ID here, e.g. `identity--6ae57ee1-39c9-4c6b-88a9-1d73d9efff7f`.
             """
         ),
     )

@@ -22,6 +22,7 @@ SDO_TYPES = set(
         "attack-pattern",
         "campaign",
         "course-of-action",
+        "exploit",
         "grouping",
         "identity",
         "incident",
@@ -35,11 +36,15 @@ SDO_TYPES = set(
         "observed-data",
         "opinion",
         "report",
-        "threat-actor",
         "sighting",
+        "threat-actor",
         "tool",
         "vulnerability",
         "weakness",
+        "x-mitre-asset",
+        "x-mitre-data-component",
+        "x-mitre-data-source",
+        "x-mitre-tactic",
     ]
     + ATTACK_FLOW_TYPES
 )
@@ -511,9 +516,9 @@ class ArangoDBHelper:
             "id": id,
         }
         more_filters = []
-        if created_by_refs := self.query_as_array('identity_ids'):
-            more_filters.append('FILTER report.created_by_ref IN @created_by_refs')
-            bind_vars['created_by_refs'] = created_by_refs
+        if created_by_refs := self.query_as_array("identity_ids"):
+            more_filters.append("FILTER report.created_by_ref IN @created_by_refs")
+            bind_vars["created_by_refs"] = created_by_refs
         query = """
             LET report_ids = (
                 FOR doc in @@view
@@ -526,7 +531,7 @@ class ArangoDBHelper:
             LIMIT @offset, @count
             RETURN KEEP(report, KEYS(report, TRUE))
         """
-        query = query.replace('#more_filters', '\n'.join(more_filters))
+        query = query.replace("#more_filters", "\n".join(more_filters))
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_sros(self):

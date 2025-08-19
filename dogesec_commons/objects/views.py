@@ -20,7 +20,10 @@ from django.conf import settings
 
 import textwrap
 
-OBJECT_ID_PATTERN = r"[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+OBJECT_ID_PATTERN = (
+    r"[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+)
+
 
 class QueryParams:
     value = OpenApiParameter(
@@ -224,7 +227,11 @@ class QueryParams:
             Get a STIX Object by its ID
             """
         ),
-        responses={200: ArangoDBHelper.STIX_OBJECT_SCHEMA, 404: DEFAULT_400_RESPONSE, 400: DEFAULT_400_RESPONSE},
+        responses={
+            200: ArangoDBHelper.STIX_OBJECT_SCHEMA,
+            404: DEFAULT_400_RESPONSE,
+            400: DEFAULT_400_RESPONSE,
+        },
         parameters=[QueryParams.object_id_param],
     ),
     bundle=extend_schema(
@@ -247,9 +254,7 @@ class QueryParams:
 class SingleObjectView(viewsets.ViewSet):
     lookup_url_kwarg = "object_id"
     openapi_tags = ["Objects"]
-    lookup_value_regex = (
-        OBJECT_ID_PATTERN
-    )
+    lookup_value_regex = OBJECT_ID_PATTERN
 
     def retrieve(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_objects_by_id(
@@ -328,7 +333,8 @@ class ObjectsWithReportsView(SingleObjectView):
     list=extend_schema(
         responses=ArangoDBHelper.get_paginated_response_schema(),
         parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + QueryParams.SDO_PARAMS + [QueryParams.visible_to],
+        + QueryParams.SDO_PARAMS
+        + [QueryParams.visible_to],
         summary="Search and filter STIX Domain Objects",
         description=textwrap.dedent(
             """
@@ -423,7 +429,8 @@ class SMOView(viewsets.ViewSet):
     list=extend_schema(
         responses=ArangoDBHelper.get_paginated_response_schema(),
         parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + QueryParams.SRO_PARAMS + [QueryParams.visible_to],
+        + QueryParams.SRO_PARAMS
+        + [QueryParams.visible_to],
         summary="Search and filter STIX Relationship Objects",
         description=textwrap.dedent(
             """

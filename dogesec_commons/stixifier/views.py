@@ -4,8 +4,17 @@ from drf_spectacular.types import OpenApiTypes
 from ..utils import Pagination, Ordering
 
 from rest_framework import viewsets, response, mixins, exceptions
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, Filter, BooleanFilter
-from .serializers import DEFAULT_400_ERROR, DEFAULT_404_ERROR, Txt2stixExtractorSerializer
+from django_filters.rest_framework import (
+    DjangoFilterBackend,
+    FilterSet,
+    Filter,
+    BooleanFilter,
+)
+from .serializers import (
+    DEFAULT_400_ERROR,
+    DEFAULT_404_ERROR,
+    Txt2stixExtractorSerializer,
+)
 from django.forms import NullBooleanField
 
 from .serializers import ProfileSerializer
@@ -15,6 +24,7 @@ import django.db.models.deletion
 import textwrap
 
 EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -33,7 +43,11 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             View the configuration of an existing profile. Note, existing profiles cannot be modified.
             """
         ),
-        responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: ProfileSerializer}
+        responses={
+            400: DEFAULT_400_ERROR,
+            404: DEFAULT_404_ERROR,
+            200: ProfileSerializer,
+        },
     ),
     create=extend_schema(
         summary="Create a new profile",
@@ -68,7 +82,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             You cannot modify a profile once it is created. If you need to make changes, you should create another profile with the changes made. If it is essential that the same `name` + `identity_id` value be used, then you must first delete the profile in order to recreate it.
             """
         ),
-        responses={400: DEFAULT_400_ERROR, 201: ProfileSerializer}
+        responses={400: DEFAULT_400_ERROR, 201: ProfileSerializer},
     ),
     destroy=extend_schema(
         summary="Delete a profile",
@@ -79,7 +93,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             Note: it is not currently possible to delete a profile that is referenced in an existing object. You must delete the objects linked to the profile first.
             """
         ),
-        responses={404: DEFAULT_404_ERROR, 204: None}
+        responses={404: DEFAULT_404_ERROR, 204: None},
     ),
 )
 class ProfileView(viewsets.ModelViewSet):
@@ -87,10 +101,13 @@ class ProfileView(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
     http_method_names = ["get", "post", "delete"]
     pagination_class = Pagination("profiles")
-    lookup_url_kwarg = 'profile_id'
+    lookup_url_kwarg = "profile_id"
     openapi_path_params = [
         OpenApiParameter(
-            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.UUID, description="The `id` of the Profile."
+            lookup_url_kwarg,
+            location=OpenApiParameter.PATH,
+            type=OpenApiTypes.UUID,
+            description="The `id` of the Profile.",
         )
     ]
 
@@ -101,20 +118,22 @@ class ProfileView(viewsets.ModelViewSet):
     class filterset_class(FilterSet):
         name = Filter(
             help_text="Searches Profiles by their `name`. Search is wildcard. For example, `ip` will return Profiles with names `ip-extractions`, `ips`, etc.",
-            lookup_expr="icontains"
-            )
+            lookup_expr="icontains",
+        )
         identity_id = Filter(
             help_text="filter the results by the identity that created the Profile. Use a full STIX identity ID, e.g. `identity--de9fb9bd-7895-4b23-aa03-49250d9263c9`"
         )
 
     def get_queryset(self):
         return Profile.objects
-    
-class txt2stixView(mixins.RetrieveModelMixin,
-                           mixins.ListModelMixin, viewsets.GenericViewSet):
+
+
+class txt2stixView(
+    mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
+):
     serializer_class = Txt2stixExtractorSerializer
     lookup_url_kwarg = "id"
-    
+
     def get_queryset(self):
         return None
 
@@ -124,7 +143,6 @@ class txt2stixView(mixins.RetrieveModelMixin,
 
     def get_all(self):
         raise NotImplementedError("not implemented")
-    
 
     def list(self, request, *args, **kwargs):
         page = self.paginate_queryset(list(self.get_all().values()))
@@ -136,8 +154,11 @@ class txt2stixView(mixins.RetrieveModelMixin,
         print(id_, self.lookup_url_kwarg, self.kwargs)
         item = items.get(id_)
         if not item:
-            return response.Response(dict(message="item not found", code=404), status=404)
+            return response.Response(
+                dict(message="item not found", code=404), status=404
+            )
         return response.Response(item)
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -158,7 +179,11 @@ class txt2stixView(mixins.RetrieveModelMixin,
             Get a specific Extractor.
             """
         ),
-        responses={400: DEFAULT_400_ERROR, 404: DEFAULT_404_ERROR, 200: Txt2stixExtractorSerializer},
+        responses={
+            400: DEFAULT_400_ERROR,
+            404: DEFAULT_404_ERROR,
+            200: Txt2stixExtractorSerializer,
+        },
     ),
 )
 class ExtractorsView(txt2stixView):
@@ -166,29 +191,48 @@ class ExtractorsView(txt2stixView):
     lookup_url_kwarg = "extractor_id"
     openapi_path_params = [
         OpenApiParameter(
-            lookup_url_kwarg, location=OpenApiParameter.PATH, type=OpenApiTypes.STR, description="The `id` of the Extractor."
+            lookup_url_kwarg,
+            location=OpenApiParameter.PATH,
+            type=OpenApiTypes.STR,
+            description="The `id` of the Extractor.",
         )
     ]
     pagination_class = Pagination("extractors")
     filter_backends = [DjangoFilterBackend]
 
-
     class filterset_class(FilterSet):
-        type = Filter(choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES], help_text="Filter Extractors by their `type`")
-        name = Filter(help_text="Filter extractors by `name`. Is wildcard search so `ip` will return `ipv4`, `ipv6`, etc.)")
-        web_app = BooleanFilter(help_text="filters on `dogesec_web` property in txt2stix filter.\nuse case is, web app can set this to true to only show extractors allowed in web app")
+        type = Filter(
+            choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES],
+            help_text="Filter Extractors by their `type`",
+        )
+        name = Filter(
+            help_text="Filter extractors by `name`. Is wildcard search so `ip` will return `ipv4`, `ipv6`, etc.)"
+        )
+        web_app = BooleanFilter(
+            help_text="filters on `dogesec_web` property in txt2stix filter.\nuse case is, web app can set this to true to only show extractors allowed in web app"
+        )
 
     def get_all(self):
         types = EXTRACTOR_TYPES
-        if type := self.request.GET.get('type'):
-            types = type.split(',')
+        if type := self.request.GET.get("type"):
+            types = type.split(",")
 
         extractors = self.all_extractors(types)
 
-        if name := self.request.GET.get('name', '').lower():
-            extractors = {slug: extractor for slug, extractor in extractors.items() if name in extractor['name'].lower()}
+        if name := self.request.GET.get("name", "").lower():
+            extractors = {
+                slug: extractor
+                for slug, extractor in extractors.items()
+                if name in extractor["name"].lower()
+            }
 
-        webapp_filter = NullBooleanField.to_python(..., self.request.GET.get('web_app', ''))
+        webapp_filter = NullBooleanField.to_python(
+            ..., self.request.GET.get("web_app", "")
+        )
         if webapp_filter != None:
-            extractors = {slug: extractor for slug, extractor in extractors.items() if extractor.get('dogesec_web') == webapp_filter}
+            extractors = {
+                slug: extractor
+                for slug, extractor in extractors.items()
+                if extractor.get("dogesec_web") == webapp_filter
+            }
         return extractors

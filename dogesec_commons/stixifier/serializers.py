@@ -31,15 +31,17 @@ def validate_model(model):
         raise ValidationError(f"invalid model: {model}")
     return model
 
+
 def validate_extractor(typestr, types, name):
     extractors = txt2stix.extractions.parse_extraction_config(
-            txt2stix.txt2stix.INCLUDES_PATH
-        )
-    if  name not in extractors or extractors[name].type not in types:
+        txt2stix.txt2stix.INCLUDES_PATH
+    )
+    if name not in extractors or extractors[name].type not in types:
         raise ValidationError(f"`{name}` is not a valid {typestr}", 400)
-    
+
+
 def validate_stix_id(stix_id: str, type: str):
-    type_part, _, id_part = stix_id.partition('--')
+    type_part, _, id_part = stix_id.partition("--")
     if type_part != type:
         raise ValidationError(f"Invalid STIX ID for type `{type}`")
     with contextlib.suppress(Exception):
@@ -50,15 +52,18 @@ def validate_stix_id(stix_id: str, type: str):
 
 def uses_ai(slugs):
     extractors = txt2stix.extractions.parse_extraction_config(
-            txt2stix.txt2stix.INCLUDES_PATH
-        )
+        txt2stix.txt2stix.INCLUDES_PATH
+    )
     ai_based_extractors = []
     for slug in slugs:
-        if extractors[slug].type == 'ai':
+        if extractors[slug].type == "ai":
             ai_based_extractors.append(slug)
-    
+
     if ai_based_extractors:
-        raise ValidationError(f'AI based extractors `{ai_based_extractors}` used when `ai_settings_extractions` is not configured')
+        raise ValidationError(
+            f"AI based extractors `{ai_based_extractors}` used when `ai_settings_extractions` is not configured"
+        )
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
@@ -67,58 +72,92 @@ class ProfileSerializer(serializers.ModelSerializer):
         validators=[lambda stix_id: validate_stix_id(stix_id, "identity")],
         allow_null=True,
         required=False,
-        help_text="STIX Identity ID (e.g `identity--19686d47-3a50-48a0-8ef0-f3e0f8a4bd99`)"
+        help_text="STIX Identity ID (e.g `identity--19686d47-3a50-48a0-8ef0-f3e0f8a4bd99`)",
     )
 
     ai_settings_relationships = serializers.CharField(
         validators=[validate_model],
-        help_text='(required if AI relationship enabled): passed in format `provider:model`. Can only pass one model at this time.',
+        help_text="(required if AI relationship enabled): passed in format `provider:model`. Can only pass one model at this time.",
         allow_null=True,
         required=False,
     )
     ai_settings_extractions = serializers.ListField(
         child=serializers.CharField(max_length=256, validators=[validate_model]),
-        help_text='(required if AI extractions enabled) passed in format provider[:model] e.g. openai:gpt4o. Can pass more than one value to get extractions from multiple providers. model part is optional',
+        help_text="(required if AI extractions enabled) passed in format provider[:model] e.g. openai:gpt4o. Can pass more than one value to get extractions from multiple providers. model part is optional",
         required=False,
     )
     ai_content_check_provider = serializers.CharField(
-        max_length=256, validators=[validate_model],
+        max_length=256,
+        validators=[validate_model],
         allow_null=True,
         required=False,
-        help_text='check content before proceeding'
+        help_text="check content before proceeding",
     )
-    ai_extract_if_no_incidence = serializers.BooleanField(default=True, help_text="(boolean, default `true`) if content check decides the report is not related to cyber security intelligence (e.g. vendor marketing), then you can use this setting to decide wether or not script should proceed. Setting to `false` will stop processing. It is designed to save AI tokens processing unknown content at scale in an automated way.")
-    ai_create_attack_flow = serializers.BooleanField(required=False, help_text="should create attack-flow (default is `false`)", default=False)
-    ai_create_attack_navigator_layer = serializers.BooleanField(required=False, help_text="should create attack navigator layer (default is `false`)", default=False)
+    ai_extract_if_no_incidence = serializers.BooleanField(
+        default=True,
+        help_text="(boolean, default `true`) if content check decides the report is not related to cyber security intelligence (e.g. vendor marketing), then you can use this setting to decide wether or not script should proceed. Setting to `false` will stop processing. It is designed to save AI tokens processing unknown content at scale in an automated way.",
+    )
+    ai_create_attack_flow = serializers.BooleanField(
+        required=False,
+        help_text="should create attack-flow (default is `false`)",
+        default=False,
+    )
+    ai_create_attack_navigator_layer = serializers.BooleanField(
+        required=False,
+        help_text="should create attack navigator layer (default is `false`)",
+        default=False,
+    )
     extractions = serializers.ListField(
         min_length=1,
-        child=serializers.CharField(max_length=256, validators=[partial(validate_extractor, 'extractor', ["ai", "pattern", "lookup"])]),
+        child=serializers.CharField(
+            max_length=256,
+            validators=[
+                partial(validate_extractor, "extractor", ["ai", "pattern", "lookup"])
+            ],
+        ),
         help_text="extraction id(s)",
     )
-    defang = serializers.BooleanField(help_text='If the text should be defanged before processing')
+    defang = serializers.BooleanField(
+        help_text="If the text should be defanged before processing"
+    )
 
-
-    ignore_embedded_relationships     = serializers.BooleanField(required=False, help_text="applies to SDO and SCO types (default is `false`)")
-    ignore_embedded_relationships_sro = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on `relationship` object types (default is `true`)")
-    ignore_embedded_relationships_smo = serializers.BooleanField(required=False, help_text="sets wether to ignore embedded refs on SMO object types (`marking-definition`, `extension-definition`, `language-content`) (default is `true`)")
-    generate_pdf = serializers.BooleanField(required=False, help_text="Whether or not to generate pdf file for input, applies to both stixify and obstracts (default is `false`)")
+    ignore_embedded_relationships = serializers.BooleanField(
+        required=False, help_text="applies to SDO and SCO types (default is `false`)"
+    )
+    ignore_embedded_relationships_sro = serializers.BooleanField(
+        required=False,
+        help_text="sets wether to ignore embedded refs on `relationship` object types (default is `true`)",
+    )
+    ignore_embedded_relationships_smo = serializers.BooleanField(
+        required=False,
+        help_text="sets wether to ignore embedded refs on SMO object types (`marking-definition`, `extension-definition`, `language-content`) (default is `true`)",
+    )
+    generate_pdf = serializers.BooleanField(
+        required=False,
+        help_text="Whether or not to generate pdf file for input, applies to both stixify and obstracts (default is `false`)",
+    )
 
     class Meta:
         model = Profile
         fields = "__all__"
 
     def validate(self, attrs):
-        if not attrs.get('ai_settings_relationships'):
-            if attrs['relationship_mode'] == 'ai':
-                raise ValidationError('`ai_settings_relationships` is required when `relationship_mode == "ai"`')
-            if attrs['ai_create_attack_flow']:
-                raise ValidationError('`ai_settings_relationships` is required when `ai_create_attack_flow == true`')
-            if attrs['ai_create_attack_navigator_layer']:
-                raise ValidationError('`ai_settings_relationships` is required when `ai_create_attack_navigator_layer == true`')
-        if not attrs.get('ai_settings_extractions'):
-            uses_ai(attrs['extractions'])
+        if not attrs.get("ai_settings_relationships"):
+            if attrs["relationship_mode"] == "ai":
+                raise ValidationError(
+                    '`ai_settings_relationships` is required when `relationship_mode == "ai"`'
+                )
+            if attrs["ai_create_attack_flow"]:
+                raise ValidationError(
+                    "`ai_settings_relationships` is required when `ai_create_attack_flow == true`"
+                )
+            if attrs["ai_create_attack_navigator_layer"]:
+                raise ValidationError(
+                    "`ai_settings_relationships` is required when `ai_create_attack_navigator_layer == true`"
+                )
+        if not attrs.get("ai_settings_extractions"):
+            uses_ai(attrs["extractions"])
         return super().validate(attrs)
-
 
 
 DEFAULT_400_ERROR = OpenApiResponse(
@@ -151,9 +190,8 @@ DEFAULT_404_ERROR = OpenApiResponse(
 ##
 
 
-
 class Txt2stixExtractorSerializer(serializers.Serializer):
-    id = serializers.CharField(label='The `id` of the extractor')
+    id = serializers.CharField(label="The `id` of the extractor")
     name = serializers.CharField()
     type = serializers.CharField()
     description = serializers.CharField(required=False, allow_null=True)
@@ -177,9 +215,14 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
             if extractor.type in types:
                 retval[extractor.slug] = cls.cleanup_extractor(extractor)
                 if extractor.file:
-                    retval[extractor.slug]["file"] = urljoin(conf.TXT2STIX_INCLUDE_URL, str(extractor.file.relative_to(txt2stix.txt2stix.INCLUDES_PATH)))
+                    retval[extractor.slug]["file"] = urljoin(
+                        conf.TXT2STIX_INCLUDE_URL,
+                        str(
+                            extractor.file.relative_to(txt2stix.txt2stix.INCLUDES_PATH)
+                        ),
+                    )
         return retval
-    
+
     @classmethod
     def cleanup_extractor(cls, dct: dict):
         KEYS = cls(data={}).get_fields()
@@ -188,4 +231,3 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
             if key in dct:
                 retval[key] = dct[key]
         return retval
-

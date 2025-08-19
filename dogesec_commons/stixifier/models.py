@@ -13,10 +13,11 @@ class RelationshipMode(models.TextChoices):
     AI = "ai", "AI Relationship"
     STANDARD = "standard", "Standard Relationship"
 
+
 def validate_extractor(types, name):
     extractors = txt2stix.extractions.parse_extraction_config(
-            txt2stix.txt2stix.INCLUDES_PATH
-        ).values()
+        txt2stix.txt2stix.INCLUDES_PATH
+    ).values()
     for extractor in extractors:
         if name == extractor.slug and extractor.type in types:
             return True
@@ -29,25 +30,32 @@ class Profile(models.Model):
     name = models.CharField(max_length=250, unique=True)
     identity_id = models.CharField(max_length=46, null=True, default=None)
     extractions = ArrayField(base_field=models.CharField(max_length=256))
-    relationship_mode = models.CharField(choices=RelationshipMode.choices, max_length=20, default=RelationshipMode.STANDARD)
+    relationship_mode = models.CharField(
+        choices=RelationshipMode.choices,
+        max_length=20,
+        default=RelationshipMode.STANDARD,
+    )
     extract_text_from_image = models.BooleanField(default=False)
     defang = models.BooleanField()
     generate_pdf = models.BooleanField(default=False)
     ai_settings_relationships = models.CharField(max_length=256, blank=False, null=True)
-    ai_settings_extractions = ArrayField(base_field=models.CharField(max_length=256), default=list)
-    ai_content_check_provider = models.CharField(default=None, null=True, blank=False, max_length=256)
+    ai_settings_extractions = ArrayField(
+        base_field=models.CharField(max_length=256), default=list
+    )
+    ai_content_check_provider = models.CharField(
+        default=None, null=True, blank=False, max_length=256
+    )
     ai_extract_if_no_incidence = models.BooleanField(default=True)
     ai_create_attack_flow = models.BooleanField(default=False)
     ai_create_attack_navigator_layer = models.BooleanField(default=False)
     ignore_image_refs = models.BooleanField(default=True)
-    ignore_link_refs  = models.BooleanField(default=True)
-    ignore_extraction_boundary  = models.BooleanField(default=False)
+    ignore_link_refs = models.BooleanField(default=True)
+    ignore_extraction_boundary = models.BooleanField(default=False)
 
     #############
     ignore_embedded_relationships_sro = models.BooleanField(default=True)
     ignore_embedded_relationships_smo = models.BooleanField(default=True)
-    ignore_embedded_relationships     = models.BooleanField(default=False)
-
+    ignore_embedded_relationships = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs) -> None:
         if not self.id:

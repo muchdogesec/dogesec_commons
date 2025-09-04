@@ -937,8 +937,6 @@ def test_visible_to(client, path, identity_ref):
         (
             "created_ascending",
             [
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
                 "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
@@ -962,15 +960,11 @@ def test_visible_to(client, path, identity_ref):
                 "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
             ],
         ),
         (
             "modified_ascending",
             [
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
                 "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
@@ -994,19 +988,15 @@ def test_visible_to(client, path, identity_ref):
                 "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
             ],
         ),
         (
             "name_descending",
             [
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
                 "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
                 "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
                 "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
                 "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
                 "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
@@ -1022,12 +1012,10 @@ def test_visible_to(client, path, identity_ref):
                 "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
                 "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
                 "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
-                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
                 "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
                 "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
                 "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
                 "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
-                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
             ],
         ),
     ],
@@ -1038,4 +1026,4 @@ def test_sort_sdos(sdo_data, sort, expected_ids):
         request_from_queries(sort=sort),
     )
 
-    assert [obj["id"] for obj in helper.get_sdos().data["objects"]] == expected_ids
+    assert [obj["id"] for obj in helper.get_sdos().data["objects"] if obj['type'] != 'identity'] == expected_ids

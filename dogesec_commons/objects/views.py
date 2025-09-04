@@ -20,6 +20,7 @@ from django.conf import settings
 
 import textwrap
 
+
 OBJECT_ID_PATTERN = (
     r"[\w\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 )

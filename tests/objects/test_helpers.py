@@ -428,7 +428,7 @@ SCO_VALUE_FILTER_TEST_DATA = test_data = [
 @pytest.mark.parametrize(
     ["objects", "value", "expected_ids"], SCO_VALUE_FILTER_TEST_DATA
 )
-def test_get_scos_value_filter(objects, value, expected_ids):
+def test_get_scos_value_filter(subtests, objects, value, expected_ids):
     helper = ArangoDBHelper(
         conf.ARANGODB_DATABASE_VIEW, request_from_queries(value=value)
     )
@@ -439,6 +439,24 @@ def test_get_scos_value_filter(objects, value, expected_ids):
         objects = response_data["objects"]
         object_ids = {obj["id"] for obj in objects}
         assert object_ids == set(expected_ids)
+        with subtests.test("test sort"):
+            sco_sort_test()
+    
+
+def sco_sort_test():
+    helper_desc = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(sort='type_descending'),
+    )
+    helper_asc = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(sort='type_ascending'),
+    )
+
+    asc_objects = [obj['id'] for obj in helper_asc.get_scos().data["objects"]]
+    desc_objects = [obj['id'] for obj in helper_desc.get_scos().data["objects"]]
+    assert asc_objects == list(reversed(desc_objects))
+    assert len(asc_objects) != 0, len(asc_objects)
 
 
 def test_get_scos_type_filter(subtests):
@@ -467,18 +485,72 @@ def sdo_data():
             "id": "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
             "labels": ["weak label 1", "strong label 2"],
             "name": "a weakness object",
+            "created": "2023-05-14T11:24:36Z",
+            "modified": "2023-05-14T11:24:36Z",
         },
         {
             "type": "weakness",
             "id": "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
             "labels": ["weak label 3"],
             "name": "another weakness object",
+            "created": "2022-11-02T08:51:12Z",
+            "modified": "2024-01-19T17:40:58Z",
         },
         {
             "type": "vulnerability",
             "id": "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
             "labels": ["weak label 3"],
             "name": "another vulnerability object",
+            "created": "2021-08-27T22:13:07Z",
+            "modified": "2021-08-27T22:13:07Z",
+        },
+        {
+            "type": "malware",
+            "id": "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+            "labels": ["trojan", "infostealer"],
+            "name": "InfoStealer Trojan X",
+            "created": "2022-02-14T09:12:44Z",
+            "modified": "2023-04-01T15:37:19Z",
+        },
+        {
+            "type": "tool",
+            "id": "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+            "labels": ["reconnaissance", "scanner"],
+            "name": "NetProbe",
+            "created": "2024-03-22T06:48:00Z",
+            "modified": "2024-05-10T14:55:03Z",
+        },
+        {
+            "type": "threat-actor",
+            "id": "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+            "labels": ["apt", "financial-motive"],
+            "name": "APT Zeta",
+            "created": "2021-12-07T21:33:10Z",
+            "modified": "2021-12-07T21:33:10Z",
+        },
+        {
+            "type": "attack-pattern",
+            "id": "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+            "labels": ["credential-access", "phishing"],
+            "name": "Email Credential Phishing",
+            "created": "2023-09-09T13:59:47Z",
+            "modified": "2024-01-20T09:22:15Z",
+        },
+        {
+            "type": "course-of-action",
+            "id": "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+            "labels": ["mitigation", "network"],
+            "name": "Block Outbound SMTP",
+            "created": "2022-06-18T03:18:25Z",
+            "modified": "2022-07-01T11:44:38Z",
+        },
+        {
+            "type": "intrusion-set",
+            "id": "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+            "labels": ["espionage", "state-sponsored"],
+            "name": "Group Orion",
+            "created": "2024-08-01T17:11:42Z",
+            "modified": "2024-08-18T10:25:50Z",
         },
     ]
     with make_s2a_uploads(
@@ -857,3 +929,113 @@ def test_visible_to(client, path, identity_ref):
         assert obj.get("created_by_ref") in [None, identity_ref] or not set(
             obj.get("object_marking_refs", [])
         ).isdisjoint([green_ref, clear_ref])
+
+
+@pytest.mark.parametrize(
+    "sort, expected_ids",
+    [
+        (
+            "created_ascending",
+            [
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+            ],
+        ),
+        (
+            "created_descending",
+            [
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+            ],
+        ),
+        (
+            "modified_ascending",
+            [
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+            ],
+        ),
+        (
+            "modified_descending",
+            [
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+            ],
+        ),
+        (
+            "name_descending",
+            [
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+            ],
+        ),
+        (
+            "name_ascending",
+            [
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+                "threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a",
+                "course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c",
+                "identity--9779a2db-f98c-5f4b-8d08-8ee04e02dbb5",
+                "attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140",
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "identity--72e906ce-ca1b-5d73-adcd-9ea9eb66a1b4",
+            ],
+        ),
+    ],
+)
+def test_sort_sdos(sdo_data, sort, expected_ids):
+    helper = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(sort=sort),
+    )
+
+    assert [obj["id"] for obj in helper.get_sdos().data["objects"]] == expected_ids

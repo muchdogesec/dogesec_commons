@@ -366,10 +366,10 @@ class ArangoDBHelper:
         query = f"""
             FOR doc in @@collection SEARCH doc.type IN @types AND doc._is_latest == TRUE
             {other_filters or ""}
-            {self.get_sort_stmt(SCO_SORT_FIELDS)}
 
             COLLECT id = doc.id INTO docs
             LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
+            {self.get_sort_stmt(SCO_SORT_FIELDS)}
             
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))
@@ -389,11 +389,11 @@ class ArangoDBHelper:
             FOR doc in @@collection
             SEARCH doc.type IN @types AND doc._is_latest == TRUE
             {other_filters or ""}
-            {self.get_sort_stmt(SMO_SORT_FIELDS)}
 
 
             COLLECT id = doc.id INTO docs
             LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
+            {self.get_sort_stmt(SMO_SORT_FIELDS)}
 
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
@@ -436,11 +436,11 @@ class ArangoDBHelper:
             FOR doc in @@collection
             SEARCH doc.type IN @types AND {' AND '.join(search_filters)}
             {other_filters or ""}
-            {self.get_sort_stmt(SDO_SORT_FIELDS)}
 
             
             COLLECT id = doc.id INTO docs
             LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
+            {self.get_sort_stmt(SDO_SORT_FIELDS)}
 
             LIMIT @offset, @count
             RETURN  KEEP(doc, KEYS(doc, true))
@@ -583,10 +583,10 @@ class ArangoDBHelper:
         query = f"""
             FOR doc in @@collection
             SEARCH doc.type == 'relationship' AND { ' AND '.join(search_filters) }
-            {self.get_sort_stmt(SRO_SORT_FIELDS)}
 
             COLLECT id = doc.id INTO docs
             LET doc = FIRST(FOR d in docs[*].doc SORT d.modified OR d.created DESC, d._record_modified DESC RETURN d)
+            {self.get_sort_stmt(SRO_SORT_FIELDS)}
 
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, true))

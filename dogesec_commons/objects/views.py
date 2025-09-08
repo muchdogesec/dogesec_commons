@@ -311,11 +311,6 @@ class SingleObjectView(viewsets.ViewSet):
     ),
 )
 class ObjectsWithReportsView(SingleObjectView):
-    @decorators.action(detail=True, methods=["GET"])
-    def reports(self, request, *args, **kwargs):
-        return ArangoDBHelper(
-            conf.ARANGODB_DATABASE_VIEW, request, "reports"
-        ).get_containing_reports(kwargs.get(self.lookup_url_kwarg))
 
     @decorators.action(
         detail=True,

@@ -153,6 +153,12 @@ class QueryParams:
         type=OpenApiTypes.BOOL,
     )
 
+    include_embedded_sros = OpenApiParameter(
+        "include_embedded_sros",
+        type=OpenApiTypes.BOOL,
+        description="set to `true` to include the embedded relationships linking the objects. Setting to `false` (default) will still return the target object, but wont return the embedded SRO linking them. Set to `true` if your downstream software CANNOT interpret STIX embedded relationships",
+    )
+
     SRO_PARAMS = [
         source_ref,
         source_ref_type,
@@ -248,6 +254,7 @@ class QueryParams:
             QueryParams.object_id_param,
             QueryParams.all_types,
             QueryParams.include_embedded_refs,
+            QueryParams.include_embedded_sros,
             QueryParams.visible_to,
         ],
     ),

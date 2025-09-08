@@ -817,9 +817,50 @@ def bundle_data():
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "relationship--red",
                 "ex-type1--3",
-                "relationship--clear",
+                # "relationship--clear", #embedded sro
             ],
             id="no filters",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(include_embedded_sros='false'), #false is default
+            [
+                "ex-type1--2",
+                "ex-type2--2",
+                "ex-type2--3",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "relationship--red",
+                "ex-type1--3",
+                # "relationship--clear", #embedded sro
+            ],
+            id="don't include_embedded_sros (default)",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(include_embedded_sros='true'),
+            [
+                "ex-type1--2",
+                "ex-type2--2",
+                "ex-type2--3",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "relationship--red",
+                "ex-type1--3",
+                "relationship--clear", #embedded sro
+            ],
+            id="include_embedded_sros",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(visible_to="ref1", include_embedded_sros="true"),
+            [
+                "ex-type1--2",
+                "ex-type2--2",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "relationship--red",
+                "ex-type1--3",
+                "relationship--clear",
+            ],
+            id="visible_to:ref1, include_embedded_sros",
         ),
         pytest.param(
             "ex-type1--2",
@@ -830,7 +871,7 @@ def bundle_data():
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "relationship--red",
                 "ex-type1--3",
-                "relationship--clear",
+                # "relationship--clear", #embedded sro
             ],
             id="visible_to:ref1",
         ),
@@ -843,9 +884,22 @@ def bundle_data():
                 "ex-type2--2",
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type1--3",
-                "relationship--clear",
+                # "relationship--clear", #embedded sro
             ],
             id="visible_to:ref2",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(visible_to="ref2", include_embedded_sros="true"),
+            [
+                "ex-type1--2",
+                "ex-type2--3",
+                "ex-type2--2",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--3",
+                "relationship--clear",
+            ],
+            id="visible_to:ref2, include_embedded_sros",
         ),
         pytest.param(
             "ex-type1--2",
@@ -895,6 +949,7 @@ def bundle_data():
 )
 def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
     filters = filters or {}
+    # filters.setdefault('include_embedded_sros', 'True')
     helper = ArangoDBHelper(
         conf.ARANGODB_DATABASE_VIEW,
         request_from_queries(**filters),

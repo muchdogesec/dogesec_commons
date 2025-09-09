@@ -92,17 +92,6 @@ class SingleObjectsViewTest(URLPatternsTestCase):
         mock_get_object_bundle.assert_called_once_with(self.stix_id)
         assert response == mock_get_object_bundle.return_value
 
-    
-
-    @patch("dogesec_commons.objects.views.ArangoDBHelper.get_containing_reports")
-    def test_reports(self, mock_get_containing_reports):
-        mock_get_containing_reports.return_value = Response()
-        url = f'/objects/{self.stix_id}/reports/'
-        response = self.client.get(url, format='json')
-        mock_get_containing_reports.assert_called_once_with(self.stix_id)
-        assert response == mock_get_containing_reports.return_value
-
-    
 
     @patch("dogesec_commons.objects.views.ArangoDBHelper.delete_report_object")
     def test_destroy_report(self, mock_delete_report_object):

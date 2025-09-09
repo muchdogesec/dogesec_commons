@@ -510,30 +510,6 @@ class ArangoDBHelper:
             query = query.replace("// visible_to_filter", visible_to_filter)
         return self.execute_query(query, bind_vars=bind_vars)
 
-    def get_containing_reports(self, id):
-        bind_vars = {
-            "@view": self.collection,
-            "id": id,
-        }
-        more_filters = []
-        if created_by_refs := self.query_as_array("identity_ids"):
-            more_filters.append("FILTER report.created_by_ref IN @created_by_refs")
-            bind_vars["created_by_refs"] = created_by_refs
-        query = """
-            LET report_ids = (
-                FOR doc in @@view
-                FILTER doc.id == @id
-                RETURN DISTINCT doc._stixify_report_id
-            )
-            FOR report in @@view
-            SEARCH report.type == 'report' AND report.id IN report_ids
-            #more_filters
-            LIMIT @offset, @count
-            RETURN KEEP(report, KEYS(report, TRUE))
-        """
-        query = query.replace("#more_filters", "\n".join(more_filters))
-        return self.execute_query(query, bind_vars=bind_vars)
-
     def get_sros(self):
         bind_vars = {
             "@collection": self.collection,

@@ -441,20 +441,20 @@ def test_get_scos_value_filter(subtests, objects, value, expected_ids):
         assert object_ids == set(expected_ids)
         with subtests.test("test sort"):
             sco_sort_test()
-    
+
 
 def sco_sort_test():
     helper_desc = ArangoDBHelper(
         conf.ARANGODB_DATABASE_VIEW,
-        request_from_queries(sort='type_descending'),
+        request_from_queries(sort="type_descending"),
     )
     helper_asc = ArangoDBHelper(
         conf.ARANGODB_DATABASE_VIEW,
-        request_from_queries(sort='type_ascending'),
+        request_from_queries(sort="type_ascending"),
     )
 
-    asc_objects = [obj['id'] for obj in helper_asc.get_scos().data["objects"]]
-    desc_objects = [obj['id'] for obj in helper_desc.get_scos().data["objects"]]
+    asc_objects = [obj["id"] for obj in helper_asc.get_scos().data["objects"]]
+    desc_objects = [obj["id"] for obj in helper_desc.get_scos().data["objects"]]
     assert asc_objects == list(reversed(desc_objects))
     assert len(asc_objects) != 0, len(asc_objects)
 
@@ -823,7 +823,7 @@ def bundle_data():
         ),
         pytest.param(
             "ex-type1--2",
-            dict(include_embedded_sros='false'), #false is default
+            dict(include_embedded_sros="false"),  # false is default
             [
                 "ex-type1--2",
                 "ex-type2--2",
@@ -837,7 +837,7 @@ def bundle_data():
         ),
         pytest.param(
             "ex-type1--2",
-            dict(include_embedded_sros='true'),
+            dict(include_embedded_sros="true"),
             [
                 "ex-type1--2",
                 "ex-type2--2",
@@ -845,7 +845,7 @@ def bundle_data():
                 "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "relationship--red",
                 "ex-type1--3",
-                "relationship--clear", #embedded sro
+                "relationship--clear",  # embedded sro
             ],
             id="include_embedded_sros",
         ),
@@ -944,6 +944,50 @@ def bundle_data():
                 "ex-type2--2",
             ],
             id="types:list[2], include_embedded_refs:False, visible_to:ref1",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(created_by_refs="1"),
+            [
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--2",
+            ],
+            id="bad identity",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(created_by_refs="ref1"),
+            [
+                "ex-type2--2",
+                "relationship--red",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--2",
+            ],
+            id="identity:ref1",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(created_by_refs="ref2"),
+            [
+                "ex-type1--3",
+                "ex-type2--3",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--2",
+            ],
+            id="identity:ref2",
+        ),
+        pytest.param(
+            "ex-type1--2",
+            dict(created_by_refs="ref2,ref1"),
+            [
+                "ex-type2--2",
+                "ex-type1--3",
+                "ex-type2--3",
+                "relationship--red",
+                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
+                "ex-type1--2",
+            ],
+            id="identity:ref2+ref1",
         ),
     ],
 )
@@ -1081,4 +1125,8 @@ def test_sort_sdos(sdo_data, sort, expected_ids):
         request_from_queries(sort=sort),
     )
 
-    assert [obj["id"] for obj in helper.get_sdos().data["objects"] if obj['type'] != 'identity'] == expected_ids
+    assert [
+        obj["id"]
+        for obj in helper.get_sdos().data["objects"]
+        if obj["type"] != "identity"
+    ] == expected_ids

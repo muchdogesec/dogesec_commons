@@ -214,13 +214,15 @@ class QueryParams:
         type=OpenApiTypes.STR,
     )
 
-    identity_ids = OpenApiParameter(
-        "identity_ids",
+    created_by_refs = OpenApiParameter(
+        "created_by_refs",
         many=True,
         explode=False,
         description=textwrap.dedent(
             """
             Filter the results by the objects `created_by_ref` property. Pass an Identity object ID here, e.g. `identity--6ae57ee1-39c9-4c6b-88a9-1d73d9efff7f`.
+            it allows user to pass a list of identity object ids so that the results only contained objects created by that id
+
             """
         ),
     )
@@ -256,6 +258,7 @@ class QueryParams:
             QueryParams.include_embedded_refs,
             QueryParams.include_embedded_sros,
             QueryParams.visible_to,
+            QueryParams.created_by_refs,
         ],
     ),
 )
@@ -277,31 +280,6 @@ class SingleObjectView(viewsets.ViewSet):
 
 
 @extend_schema_view(
-    reports=extend_schema(
-        responses=ArangoDBHelper.get_paginated_response_schema(
-            "reports",
-            {
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "example": "report",
-                    },
-                    "id": {
-                        "example": "report--a86627d4-285b-5358-b332-4e33f3ec1075",
-                    },
-                },
-                "additionalProperties": True,
-            },
-        ),
-        parameters=ArangoDBHelper.get_schema_operation_parameters()
-        + [QueryParams.object_id_param, QueryParams.identity_ids],
-        summary="Get all Reports that contain this STIX Object",
-        description=textwrap.dedent(
-            """
-            Return all reports the STIX Object has a Relationship to.
-            """
-        ),
-    ),
     destroy_in_report=extend_schema(
         summary="Delete an Object from a Report",
         description=textwrap.dedent(

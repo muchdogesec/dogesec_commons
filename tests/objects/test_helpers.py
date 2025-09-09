@@ -949,7 +949,6 @@ def bundle_data():
             "ex-type1--2",
             dict(created_by_refs="1"),
             [
-                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type1--2",
             ],
             id="bad identity",
@@ -960,7 +959,6 @@ def bundle_data():
             [
                 "ex-type2--2",
                 "relationship--red",
-                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type1--2",
             ],
             id="identity:ref1",
@@ -971,7 +969,6 @@ def bundle_data():
             [
                 "ex-type1--3",
                 "ex-type2--3",
-                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type1--2",
             ],
             id="identity:ref2",
@@ -984,7 +981,6 @@ def bundle_data():
                 "ex-type1--3",
                 "ex-type2--3",
                 "relationship--red",
-                "relationship--9cf0369a-8646-4979-ae2c-ab0d3c95bfad",
                 "ex-type1--2",
             ],
             id="identity:ref2+ref1",

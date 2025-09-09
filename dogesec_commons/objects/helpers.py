@@ -487,10 +487,10 @@ class ArangoDBHelper:
         visible_to_filter = ""
         
         if created_by_refs := self.query_as_array("created_by_refs"):
-            created_by_refs.append(None) # also return objects with no `created_by_ref`
-            late_filters.append("FILTER doc.created_by_ref IN @created_by_refs")
+            late_filters.append("FILTER doc.created_by_ref IN @created_by_refs OR doc.id == @id")
             bind_vars["created_by_refs"] = created_by_refs
-        elif q := self.query.get("visible_to"):
+            
+        if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = (
                 "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",

@@ -470,7 +470,7 @@ class ArangoDBHelper:
             "id": stix_id,
         }
         rel_search_filters = []
-        search_filters = []
+        late_filters = []
         if not self.query_as_bool("include_embedded_refs", True):
             rel_search_filters.append("doc._is_ref != TRUE")
 
@@ -478,8 +478,11 @@ class ArangoDBHelper:
             rel_search_filters.append(
                 "(doc._target_type IN @types OR doc._source_type IN @types)"
             )
-            search_filters.append("FILTER doc.type IN @types")
+            late_filters.append("FILTER doc.type IN @types")
             bind_vars["types"] = types
+
+        if not self.query_as_bool('include_embedded_sros', False):
+            late_filters.append('FILTER doc._is_ref != TRUE')
 
         visible_to_filter = ""
         if q := self.query.get("visible_to"):
@@ -503,8 +506,8 @@ class ArangoDBHelper:
             query = query.replace(
                 "/* rel_search_extras */", " AND " + " AND ".join(rel_search_filters)
             )
-        if search_filters:
-            query = query.replace("// extra_search", "\n".join(search_filters))
+        if late_filters:
+            query = query.replace("// extra_search", "\n".join(late_filters))
 
         if visible_to_filter:
             query = query.replace("// visible_to_filter", visible_to_filter)

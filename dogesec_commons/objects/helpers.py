@@ -483,8 +483,13 @@ class ArangoDBHelper:
 
         if not self.query_as_bool('include_embedded_sros', False):
             late_filters.append('FILTER doc._is_ref != TRUE')
-
+        
         visible_to_filter = ""
+        
+        if created_by_refs := self.query_as_array("created_by_refs"):
+            late_filters.append("FILTER doc.created_by_ref IN @created_by_refs OR doc.id == @id")
+            bind_vars["created_by_refs"] = created_by_refs
+            
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = (

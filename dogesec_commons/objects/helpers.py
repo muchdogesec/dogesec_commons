@@ -616,8 +616,8 @@ class ArangoDBHelper:
                 if not r:
                     continue
 
-                collection_, _, _key = r.partition('/')
-                stix_id, _, _ = _key.partition('+')
+                collection_, _, _key = r.partition("/")
+                stix_id, _, _ = _key.partition("+")
                 if "report" in r:
                     report_id = r
                     collection_name = collection_
@@ -625,25 +625,25 @@ class ArangoDBHelper:
                     object_keys.append(dict(_key=_key))
                     report_ref_ids.append(stix_id)
 
-        db_service.db.collection(collection_name).delete_many(
-            object_keys, refill_index_caches=True, sync=True
-        )
-        db_service.db.collection(
-            collection_name.removesuffix("_vertex_collection") + "_edge_collection"
-        ).delete_many(object_keys, refill_index_caches=True, sync=True)
-        resp = self.execute_query(
-            """
-            FOR doc in @@collection FILTER doc._id == @report_idkey
-                UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
-                RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
-                """,
-            bind_vars={
-                "report_idkey": report_id,
-                "stix_ids": report_ref_ids,
-                "@collection": collection_name,
-            },
-            paginate=False,
-        )
-        if report_ref_ids:
+        if report_ref_ids and collection_name:
+            db_service.db.collection(collection_name).delete_many(
+                object_keys, refill_index_caches=True, sync=True
+            )
+            db_service.db.collection(
+                collection_name.removesuffix("_vertex_collection") + "_edge_collection"
+            ).delete_many(object_keys, refill_index_caches=True, sync=True)
+            resp = self.execute_query(
+                """
+                FOR doc in @@collection FILTER doc._id == @report_idkey
+                    UPDATE {_key: doc._key} WITH {object_refs: REMOVE_VALUES(doc.object_refs, @stix_ids)} IN @@collection
+                    RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
+                    """,
+                bind_vars={
+                    "report_idkey": report_id,
+                    "stix_ids": report_ref_ids,
+                    "@collection": collection_name,
+                },
+                paginate=False,
+            )
             db_service.update_is_latest_several(report_ref_ids, collection_name)
         return Response(dict(removed_objects=report_ref_ids))

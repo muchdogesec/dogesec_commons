@@ -93,14 +93,24 @@ class SingleObjectsViewTest(URLPatternsTestCase):
         assert response == mock_get_object_bundle.return_value
 
 
-    @patch("dogesec_commons.objects.views.ArangoDBHelper.delete_report_object")
-    def test_destroy_report(self, mock_delete_report_object):
-        mock_delete_report_object.return_value = Response()
+    @patch("dogesec_commons.objects.views.ArangoDBHelper.delete_report_objects")
+    def test_destroy_report(self, mock_delete_report_objects):
+        mock_delete_report_objects.return_value = Response()
         report_id = f'report--{uuid.uuid4()}'
         url = f'/objects/{self.stix_id}/reports/{report_id}/'
         response = self.client.delete(url, format='json')
+        assert response.status_code == 204
+        mock_delete_report_objects.assert_called_once_with(report_id=report_id, object_ids=[self.stix_id])
+
+    @patch("dogesec_commons.objects.views.ArangoDBHelper.delete_report_objects")
+    def test_destroy_multi(self, mock_delete_report_objects):
+        mock_delete_report_objects.return_value = Response()
+        report_id = f'report--{uuid.uuid4()}'
+        url = f'/objects/reports/{report_id}/remove_objects/'
+        stix_ids = ["1", "2", "3"]
+        response = self.client.post(url, format='json', data=stix_ids, content_type="application/json")
         assert response.status_code != 404
-        mock_delete_report_object.assert_called_once_with(report_id=report_id, object_id=self.stix_id)
-        assert response == mock_delete_report_object.return_value
+        mock_delete_report_objects.assert_called_once_with(report_id=report_id, object_ids=stix_ids)
+        assert response == mock_delete_report_objects.return_value
 
     

@@ -481,15 +481,17 @@ class ArangoDBHelper:
             late_filters.append("FILTER doc.type IN @types")
             bind_vars["types"] = types
 
-        if not self.query_as_bool('include_embedded_sros', False):
-            late_filters.append('FILTER doc._is_ref != TRUE')
-        
+        if not self.query_as_bool("include_embedded_sros", False):
+            late_filters.append("FILTER doc._is_ref != TRUE")
+
         visible_to_filter = ""
-        
+
         if created_by_refs := self.query_as_array("created_by_refs"):
-            late_filters.append("FILTER doc.created_by_ref IN @created_by_refs OR doc.id == @id")
+            late_filters.append(
+                "FILTER doc.created_by_ref IN @created_by_refs OR doc.id == @id"
+            )
             bind_vars["created_by_refs"] = created_by_refs
-            
+
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = (
@@ -579,7 +581,7 @@ class ArangoDBHelper:
         # return HttpResponse(content=f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
 
-    def delete_report_object(self, report_id, object_id):
+    def delete_report_objects(self, report_id, object_ids):
         db_service = ArangoDBService(
             self.DB_NAME,
             [],
@@ -592,45 +594,43 @@ class ArangoDBHelper:
             host_url=settings.ARANGODB_HOST_URL,
         )
         query = """
-        let doc_ids = (
             FOR doc IN @@view
-            SEARCH doc.id IN [@object_id, @report_id] AND doc._stixify_report_id == @report_id
-            SORT doc.object_refs
-            RETURN [doc._id, doc.id]
-        )
-        LET doc_id = FIRST(doc_ids[* FILTER CURRENT[1]== @object_id])
-        LET report_id = FIRST(FIRST(doc_ids[* FILTER CURRENT[1] == @report_id]))
-
-        RETURN [report_id, doc_id, (FOR d IN APPEND([doc_id], (
-                FOR doc IN @@view
-                SEARCH doc._from == doc_id[0] OR doc._to == doc_id[0]
-                RETURN [doc._id, doc.id])
-            )
-        FILTER d != NULL
-        RETURN d)]
+            SEARCH (doc.id IN @object_ids OR (doc.source_ref IN @object_ids AND doc.relationship_type == "detected-using") OR doc.id == @report_id) AND doc._stixify_report_id == @report_id
+            RETURN [doc._id, doc._to]
         """
-        bind_vars = {
-            "@view": self.collection,
-            "object_id": object_id,
-            "report_id": report_id,
-        }
-        report_idkey, doc_id, ids_to_be_removed = self.execute_query(
-            query, bind_vars=bind_vars, paginate=False
-        )[0]
-        # separate into collections
-        collections = {}
-        bind_vars = {"ckeys": {}}
-        queries = []
-        stix_ids = []
-        for key_id, stix_id in ids_to_be_removed:
-            stix_ids.append(stix_id)
-            try:
-                db_service.db.delete_document(key_id)
-            except Exception as e:
-                logging.exception("failed to delete object %s", key_id)
+        objects_to_delete: list[tuple[str, str]] = self.execute_query(
+            query,
+            paginate=False,
+            bind_vars={
+                "@view": self.collection,
+                "object_ids": object_ids,
+                "report_id": report_id,
+            },
+        )
+        object_keys = []
+        report_ref_ids = []
+        report_id = None
+        collection_name = None
+        for r2 in objects_to_delete:
+            for r in r2:
+                if not r:
+                    continue
 
-        if not stix_ids:
-            return response.Response(status=status.HTTP_204_NO_CONTENT)
+                collection_, _, _key = r.partition('/')
+                stix_id, _, _ = _key.partition('+')
+                if "report" in r:
+                    report_id = r
+                    collection_name = collection_
+                else:
+                    object_keys.append(dict(_key=_key))
+                    report_ref_ids.append(stix_id)
+
+        db_service.db.collection(collection_name).delete_many(
+            object_keys, refill_index_caches=True, sync=True
+        )
+        db_service.db.collection(
+            collection_name.removesuffix("_vertex_collection") + "_edge_collection"
+        ).delete_many(object_keys, refill_index_caches=True, sync=True)
         resp = self.execute_query(
             """
             FOR doc in @@collection FILTER doc._id == @report_idkey
@@ -638,23 +638,12 @@ class ArangoDBHelper:
                 RETURN {new_length: LENGTH(NEW.object_refs), old_length: LENGTH(doc.object_refs)}
                 """,
             bind_vars={
-                "report_idkey": report_idkey,
-                "stix_ids": stix_ids,
-                "@collection": report_idkey.split("/")[0],
+                "report_idkey": report_id,
+                "stix_ids": report_ref_ids,
+                "@collection": collection_name,
             },
             paginate=False,
         )
-        logging.info(
-            f"removed references from report.object_refs: {resp} // {ids_to_be_removed}"
-        )
-        if doc_id:
-            doc_collection_name = doc_id[0].split("/")[0]
-            db_service.update_is_latest_several_chunked(
-                list(set([object_id] + stix_ids)),
-                doc_collection_name,
-                doc_collection_name.removesuffix("_vertex_collection").removesuffix(
-                    "_edge_collection"
-                )
-                + "_edge_collection",
-            )
-        return response.Response(status=status.HTTP_204_NO_CONTENT)
+        if report_ref_ids:
+            db_service.update_is_latest_several(report_ref_ids, collection_name)
+        return Response(dict(removed_objects=report_ref_ids))

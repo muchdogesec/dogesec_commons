@@ -1,3 +1,4 @@
+import contextlib
 from dogesec_commons.objects import conf
 from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE
 from .helpers import (
@@ -277,6 +278,22 @@ class SingleObjectView(viewsets.ViewSet):
         )
 
 
+OBJECT_ID_ARRAY = {
+    "type": "array",
+    "items": {
+        "type": "string",
+        "pattern": "^[a-z\\-]+--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "example": "ipv4-addr--ba6b3f21-d818-4e7c-bfff-765805177512",
+    },
+}
+DELETE_OBJECTS_RESPONSE = {
+    "type": "object",
+    "properties": {"removed_objects": OBJECT_ID_ARRAY},
+    "required": ["removed_objects"],
+    "additionalProperties": False,
+}
+
+
 @extend_schema_view(
     destroy_in_report=extend_schema(
         summary="Delete an Object from a Report",
@@ -292,6 +309,12 @@ class SingleObjectView(viewsets.ViewSet):
             """
         ),
     ),
+    delete_multi=extend_schema(
+        request={"application/json": OBJECT_ID_ARRAY},
+        responses={200: DELETE_OBJECTS_RESPONSE},
+        summary="Remove multiple objects from report",
+        description="Remove multiple objects from report",
+    ),
 )
 class ObjectsWithReportsView(SingleObjectView):
 
@@ -303,9 +326,24 @@ class ObjectsWithReportsView(SingleObjectView):
     def destroy_in_report(
         self, request, *args, object_id=None, report_id=None, **kwargs
     ):
+        ArangoDBHelper(
+            conf.ARANGODB_DATABASE_VIEW, request
+        ).delete_report_objects(report_id=report_id, object_ids=[object_id])
+        return Response(status=204)
+
+    @decorators.action(
+        detail=False,
+        methods=["POST"],
+        url_path=r"reports/(?P<report_id>report--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/remove_objects",
+    )
+    def delete_multi(self, request, *args, report_id=None, **kwargs):
+        data = request.data
+        object_ids = []
+        with contextlib.suppress(Exception):
+            object_ids = [str(d) for d in data]
         return ArangoDBHelper(
             conf.ARANGODB_DATABASE_VIEW, request
-        ).delete_report_object(report_id=report_id, object_id=object_id)
+        ).delete_report_objects(report_id=report_id, object_ids=object_ids)
 
 
 @extend_schema_view(

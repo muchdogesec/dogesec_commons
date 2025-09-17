@@ -299,21 +299,31 @@ DELETE_OBJECTS_RESPONSE = {
         summary="Delete an Object from a Report",
         description=textwrap.dedent(
             """
-            Occasionally txt2stix will create an erroneous extraction from a text document. This endpoint allows you to remove the STIX objects created for such extractions.
+            Occasionally txt2stix will create an erroneous extraction from a text document. This endpoint allows you to remove the STIX object created for such extractions.
 
-            This request will delete the object ID specified in the request, and ALL relationship objects that reference this Objects ID in either the `source_ref` or `target_ref` property of the relationship object.
+            This request will delete the object ID specified in the request, and ALL relationship objects that reference the Objects ID in either the `source_ref` or `target_ref` property of the relationship object. If the object passed is an SCO object, it will also delete any linked Indicators (and relationships between Indicator and SCO), to ensure all objects created by txt2stix for the SCO are removed (if no Indicator exists, it will just delete the SCO).
 
-            You can safely to run this request on SCOs that are seen in multiple reports. Whilst Obstracts shows a single SCO with the same value with the same STIX ID (e.g. `1.1.1.1`), in the database multiple versions of the same SCO object exist, one for each report (identified using the field `_stix2arango=<REPORT_ID`). All objects created during the processing of this report have this field too.
+            You can safely to run this request on SCOs that are seen in multiple reports. This is because in the database multiple versions of the same SCO object exist, one for each report (identified using the field `_stix2arango=<REPORT_ID>`). All objects created during the processing of this report have this field too.
 
-            **DANGER:** This action is irreversible. It also can create issues if not run carefully. For example, assume you have a connection from a report object as follows; Report -> Indicator -> IPv4. Should you delete the Indicator objects in this example, the IPv4 will no longer be directly connected to the report (though it will still appear in the report bundle, and the reports `object_refs` property).
+            **DANGER:** This action is irreversible.
             """
         ),
     ),
     delete_multi=extend_schema(
         request={"application/json": OBJECT_ID_ARRAY},
         responses={200: DELETE_OBJECTS_RESPONSE},
-        summary="Remove multiple objects from report",
-        description="Remove multiple objects from report",
+        summary="Delete multiple Objects from a Report",
+        description=textwrap.dedent(
+            """
+            Occasionally txt2stix will create an erroneous extraction from a text document. This endpoint allows you to remove the STIX objects created for such extractions.
+
+            This request will delete the object IDs specified in the request, and ALL relationship objects that reference the Objects IDs in either the `source_ref` or `target_ref` property of the relationship object. If any of the objects passed are an SCO object, it will also delete any linked Indicators (and relationships between Indicator and SCO), to ensure all objects created by txt2stix for the SCO are removed (if no Indicator exists, it will just delete the SCO).
+
+            You can safely to run this request on SCOs that are seen in multiple reports. This is because in the database multiple versions of the same SCO object exist, one for each report (identified using the field `_stix2arango=<REPORT_ID>`). All objects created during the processing of this report have this field too.
+
+            **DANGER:** This action is irreversible.
+            """
+        ),
     ),
 )
 class ObjectsWithReportsView(SingleObjectView):

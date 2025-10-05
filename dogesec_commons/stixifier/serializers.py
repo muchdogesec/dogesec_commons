@@ -32,6 +32,12 @@ def validate_model(model):
     return model
 
 
+def validate_ref(value: str):
+    if not (value.endswith("_ref") or value.endswith("_refs")):
+        raise ValidationError("value must end with _ref or _refs")
+    return value
+
+
 def validate_extractor(typestr, types, name):
     extractors = txt2stix.extractions.parse_extraction_config(
         txt2stix.txt2stix.INCLUDES_PATH
@@ -132,6 +138,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         required=False,
         help_text="sets wether to ignore embedded refs on SMO object types (`marking-definition`, `extension-definition`, `language-content`) (default is `true`)",
     )
+    include_embedded_relationships_attributes = serializers.ListField(
+        required=False,
+        child=serializers.CharField(
+            max_length=128,
+            validators=[validate_ref],
+        ),
+        help_text="Only create embedded relationships for STIX attributes that match items in this list",
+    )
     generate_pdf = serializers.BooleanField(
         required=False,
         help_text="Whether or not to generate pdf file for input, applies to both stixify and obstracts (default is `false`)",
@@ -141,17 +155,20 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = "__all__"
 
+    def validate_empty_values(self, data):
+        return super().validate_empty_values(data)
+
     def validate(self, attrs):
         if not attrs.get("ai_settings_relationships"):
-            if attrs["relationship_mode"] == "ai":
+            if attrs.get("relationship_mode") == "ai":
                 raise ValidationError(
                     '`ai_settings_relationships` is required when `relationship_mode == "ai"`'
                 )
-            if attrs["ai_create_attack_flow"]:
+            if attrs.get("ai_create_attack_flow"):
                 raise ValidationError(
                     "`ai_settings_relationships` is required when `ai_create_attack_flow == true`"
                 )
-            if attrs["ai_create_attack_navigator_layer"]:
+            if attrs.get("ai_create_attack_navigator_layer"):
                 raise ValidationError(
                     "`ai_settings_relationships` is required when `ai_create_attack_navigator_layer == true`"
                 )

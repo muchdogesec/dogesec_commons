@@ -42,6 +42,7 @@ def fake_profile(db):
         ignore_embedded_relationships=False,
         ignore_embedded_relationships_smo=False,
         ignore_embedded_relationships_sro=False,
+        include_embedded_relationships_attributes=["object_refs", "created_by_ref"],
     )
 
 
@@ -200,6 +201,19 @@ def test_upload_to_arango(fake_file, fake_profile):
         processor.upload_to_arango()
         mock_instance.run.assert_called()
         assert mock_link.call_count == 2
+        mock_s2a.assert_called_once_with(
+            file=str(processor.bundle_file),
+            database="test_dogesec_commons",
+            collection="stixify",
+            stix2arango_note="stixifier-report--abc",
+            ignore_embedded_relationships=False,
+            ignore_embedded_relationships_smo=False,
+            ignore_embedded_relationships_sro=False,
+            include_embedded_relationships_attributes=["object_refs", "created_by_ref"],
+            host_url=mock_s2a.call_args[1]['host_url'],
+            username=mock_s2a.call_args[1]['username'],
+            password=mock_s2a.call_args[1]['password'],
+        )
 
 
 def test_process(fake_file, fake_profile):

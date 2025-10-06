@@ -182,6 +182,7 @@ class StixifyProcessor:
             ignore_embedded_relationships=self.profile.ignore_embedded_relationships,
             ignore_embedded_relationships_smo=self.profile.ignore_embedded_relationships_smo,
             ignore_embedded_relationships_sro=self.profile.ignore_embedded_relationships_sro,
+            include_embedded_relationships_attributes=self.profile.include_embedded_relationships_attributes,
             host_url=settings.ARANGODB_HOST_URL,
             username=settings.ARANGODB_USERNAME,
             password=settings.ARANGODB_PASSWORD,

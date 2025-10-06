@@ -56,6 +56,7 @@ class Profile(models.Model):
     ignore_embedded_relationships_sro = models.BooleanField(default=True)
     ignore_embedded_relationships_smo = models.BooleanField(default=True)
     ignore_embedded_relationships = models.BooleanField(default=False)
+    include_embedded_relationships_attributes = ArrayField(base_field=models.CharField(max_length=128), default=list)
 
     def save(self, *args, **kwargs) -> None:
         if not self.id:

@@ -392,10 +392,10 @@ class SDOView(viewsets.ViewSet):
 
             * `artifact.payload_bin`
             * `autonomous-system.number`
-            * `bank-account.iban_number`
-            * `bank-card.number`
-            * `cryptocurrency-transaction.hash`
-            * `cryptocurrency-wallet.hash`
+            * `bank-account.iban`
+            * `payment-card.value`
+            * `cryptocurrency-transaction.value`
+            * `cryptocurrency-wallet.value`
             * `directory.path`
             * `domain-name.value`
             * `email-addr.value`
@@ -406,7 +406,7 @@ class SDOView(viewsets.ViewSet):
             * `mac-addr.value`
             * `mutex.value`
             * `network-traffic.protocols`
-            * `phone-number.number`
+            * `phone-number.value`
             * `process.pid`
             * `software.name`
             * `url.value`

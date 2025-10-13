@@ -54,7 +54,7 @@ SCO_TYPES = set(
         "artifact",
         "autonomous-system",
         "bank-account",
-        "bank-card",
+        "payment-card",
         "cryptocurrency-transaction",
         "cryptocurrency-wallet",
         "directory",
@@ -325,10 +325,10 @@ class ArangoDBHelper:
                 (
                     doc.type == 'artifact' AND CONTAINS(LOWER(doc.payload_bin), @search_value) OR
                     doc.type == 'autonomous-system' AND CONTAINS(LOWER(doc.number), @search_value) OR
-                    doc.type == 'bank-account' AND CONTAINS(LOWER(doc.iban_number), @search_value) OR
-                    doc.type == 'bank-card' AND CONTAINS(LOWER(doc.number), @search_value) OR
-                    doc.type == 'cryptocurrency-transaction' AND CONTAINS(LOWER(doc.hash), @search_value) OR
-                    doc.type == 'cryptocurrency-wallet' AND CONTAINS(LOWER(doc.hash), @search_value) OR
+                    doc.type == 'bank-account' AND CONTAINS(LOWER(doc.iban), @search_value) OR
+                    doc.type == 'payment-card' AND CONTAINS(LOWER(doc.value), @search_value) OR
+                    doc.type == 'cryptocurrency-transaction' AND CONTAINS(LOWER(doc.value), @search_value) OR
+                    doc.type == 'cryptocurrency-wallet' AND CONTAINS(LOWER(doc.value), @search_value) OR
                     doc.type == 'directory' AND CONTAINS(LOWER(doc.path), @search_value) OR
                     doc.type == 'domain-name' AND CONTAINS(LOWER(doc.value), @search_value) OR
                     doc.type == 'email-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
@@ -339,7 +339,7 @@ class ArangoDBHelper:
                     doc.type == 'mac-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
                     doc.type == 'mutex' AND CONTAINS(LOWER(doc.value), @search_value) OR
                     doc.type == 'network-traffic' AND CONTAINS(LOWER(doc.protocols), @search_value) OR
-                    doc.type == 'phone-number' AND CONTAINS(LOWER(doc.number), @search_value) OR
+                    doc.type == 'phone-number' AND CONTAINS(LOWER(doc.value), @search_value) OR
                     doc.type == 'process' AND CONTAINS(LOWER(doc.pid), @search_value) OR
                     doc.type == 'software' AND CONTAINS(LOWER(doc.name), @search_value) OR
                     doc.type == 'url' AND CONTAINS(LOWER(doc.value), @search_value) OR

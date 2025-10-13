@@ -195,16 +195,16 @@ sco_objects = [
     {"type": "autonomous-system", "number": "AS12345", "id": "as-1"},
     {
         "type": "bank-account",
-        "iban_number": "DE89370400440532013000",
+        "iban": "DE89370400440532013000",
         "id": "bank-acc-1",
     },
-    {"type": "bank-card", "number": "4111111111111111", "id": "bank-card-1"},
+    {"type": "payment-card", "value": "4111111111111111", "id": "payment-card-1"},
     {
         "type": "cryptocurrency-transaction",
         "hash": "abcde98765fghij",
         "id": "crypto-tx-1",
     },
-    {"type": "cryptocurrency-wallet", "hash": "wallet-hash-xyz789", "id": "wallet-1"},
+    {"type": "cryptocurrency-wallet", "value": "wallet-hash-xyz789", "id": "wallet-1"},
     {"type": "directory", "path": "/usr/local/bin", "id": "dir-1"},
     {"type": "domain-name", "value": "example.net", "id": "domain-1"},
     {"type": "email-addr", "value": "user@example.com", "id": "email-1"},
@@ -252,43 +252,43 @@ SCO_VALUE_FILTER_TEST_DATA = test_data = [
         [
             {
                 "type": "bank-account",
-                "iban_number": "DE89370400440532013000",
+                "iban": "DE89370400440532013000",
                 "id": "bank-acc-1",
             }
         ],
         "3201",
         ["bank-acc-1"],
-        id="match-bank-account-on-iban_number",
+        id="match-bank-account-on-iban",
     ),
     pytest.param(
-        [{"type": "bank-card", "number": "4111111111111111", "id": "bank-card-1"}],
+        [{"type": "payment-card", "value": "4111111111111111", "id": "payment-card-1"}],
         "1111",
-        ["bank-card-1"],
-        id="match-bank-card-on-number",
+        ["payment-card-1"],
+        id="match-payment-card-on-value",
     ),
     pytest.param(
         [
             {
                 "type": "cryptocurrency-transaction",
-                "hash": "abcde12345fghij",
+                "value": "abcde12345fghij",
                 "id": "crypto-tx-1",
             }
         ],
         "12345",
         ["crypto-tx-1"],
-        id="match-crypto-tx-on-hash",
+        id="match-crypto-tx-on-value",
     ),
     pytest.param(
         [
             {
                 "type": "cryptocurrency-wallet",
-                "hash": "wallet-hash-xyz789",
+                "value": "wallet-hash-xyz789",
                 "id": "wallet-1",
             }
         ],
         "xyz",
         ["wallet-1"],
-        id="match-crypto-wallet-on-hash",
+        id="match-crypto-wallet-on-value",
     ),
     pytest.param(
         [{"type": "directory", "path": "/usr/local/static/bin", "id": "dir-1"}],

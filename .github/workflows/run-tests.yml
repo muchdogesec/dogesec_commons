@@ -49,7 +49,7 @@ jobs:
             IP_ADDRESS=$(docker network inspect -f '{{range.IPAM.Config}}{{.Gateway}}{{end}}' dogesec-commons-action_default)
             echo POSTGRES_HOST="$IP_ADDRESS" >> tests/tests.env
             echo ARANGODB_HOST_URL="http://$IP_ADDRESS:18529" >> tests/tests.env
-            pip install -e . -r tests/requirements.in
+            pip install -e '.[tests]'
 
       - name: Unit tests
         id: unit_tests

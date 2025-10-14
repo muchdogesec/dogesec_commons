@@ -1,6 +1,6 @@
 import contextlib
 import logging
-import typing, re
+import re
 from arango import ArangoClient
 from django.conf import settings
 from rest_framework.response import Response
@@ -10,9 +10,7 @@ from rest_framework.exceptions import ValidationError, NotFound
 from stix2arango.services import ArangoDBService
 from . import conf
 
-from django.http import HttpResponse
 from django.conf import settings
-from rest_framework import decorators, response, status
 
 
 ATTACK_FLOW_TYPES = ["attack-flow", "attack-action"]

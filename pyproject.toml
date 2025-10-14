@@ -45,9 +45,10 @@ stixifier = [
 ]
 
 tests = [
+    "dogesec_commons[stixifier]",
     "pytest",
     "pytest-subtests",
     "pytest-cov",
     "pytest-django",
-    "dogesec_commons[stixifier]"
+    "schemathesis==4.0.12"
 ]

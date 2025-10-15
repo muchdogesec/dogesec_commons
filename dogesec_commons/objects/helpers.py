@@ -426,7 +426,7 @@ class ArangoDBHelper:
                 search_filters.append('doc.x_mitre_domains IN [@mitre_domain]')
             else:
                 ttp_source_name_mapping = dict(capec='capec', atlas='mitre-atlas', disarm='DISARM')
-                bind_vars['ttp_source_name'] = ttp_source_name_mapping[ttp_type]
+                bind_vars['ttp_source_name'] = ttp_source_name_mapping.get(ttp_type, '===|===')
                 other_filters.append('doc.external_references[0].source_name == @ttp_source_name')
         
         if ttp_id := self.query.get('ttp_id'):

@@ -503,6 +503,12 @@ def sdo_data():
             "name": "another vulnerability object",
             "created": "2021-08-27T22:13:07Z",
             "modified": "2021-08-27T22:13:07Z",
+            "external_references": [
+                {
+                    "source_name": "cve",
+                    "external_id": "CVE-2025-1234",
+                }
+            ],
         },
         {
             "type": "malware",
@@ -511,6 +517,12 @@ def sdo_data():
             "name": "InfoStealer Trojan X",
             "created": "2022-02-14T09:12:44Z",
             "modified": "2023-04-01T15:37:19Z",
+            "external_references": [
+                {
+                    "source_name": "mitre-atlas",
+                    "external_id": "AM0101",
+                }
+            ],
         },
         {
             "type": "tool",
@@ -527,6 +539,7 @@ def sdo_data():
             "name": "APT Zeta",
             "created": "2021-12-07T21:33:10Z",
             "modified": "2021-12-07T21:33:10Z",
+            "x_mitre_domains": ["mobile-attack"],
         },
         {
             "type": "attack-pattern",
@@ -535,6 +548,12 @@ def sdo_data():
             "name": "Email Credential Phishing",
             "created": "2023-09-09T13:59:47Z",
             "modified": "2024-01-20T09:22:15Z",
+            "external_references": [
+                {
+                    "source_name": "DISARM",
+                    "external_id": "DISARM-001",
+                }
+            ],
         },
         {
             "type": "course-of-action",
@@ -543,6 +562,13 @@ def sdo_data():
             "name": "Block Outbound SMTP",
             "created": "2022-06-18T03:18:25Z",
             "modified": "2022-07-01T11:44:38Z",
+            "external_references": [
+                {
+                    "source_name": "mitre-attack",
+                    "external_id": "T1546",
+                }
+            ],
+            "x_mitre_domains": ["ics-attack", "mobile-attack"],
         },
         {
             "type": "intrusion-set",
@@ -582,6 +608,13 @@ def sdo_data():
             ["weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"],
         ),
         (dict(labels="strong"), ["weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e"]),
+        (dict(ttp_type='cwe'), ['weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e', 'weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc']),
+        (dict(ttp_type='cve'), ["vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"]),
+        (dict(ttp_type='disarm'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
+        (dict(ttp_type='atlas'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
+        (dict(ttp_id='AM0101'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
+        (dict(ttp_id='DISARM-001'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
+        (dict(ttp_id='AM'), []),
     ],
 )
 def test_sdo_filters(sdo_data, filters, expected_ids):
@@ -589,7 +622,9 @@ def test_sdo_filters(sdo_data, filters, expected_ids):
         conf.ARANGODB_DATABASE_VIEW,
         request_from_queries(**filters),
     )
-    assert {obj["id"] for obj in helper.get_sdos().data["objects"]} == set(expected_ids)
+    objects = helper.get_sdos().data["objects"]
+    print([obj["id"] for obj in objects])
+    assert {obj["id"] for obj in objects} == set(expected_ids)
 
 
 @pytest.mark.parametrize(

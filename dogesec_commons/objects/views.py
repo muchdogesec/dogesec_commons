@@ -64,6 +64,24 @@ class QueryParams:
         OpenApiParameter("sort", enum=SCO_SORT_FIELDS),
     ]
 
+    ttp_type = OpenApiParameter(
+        "ttp_type",
+        description=textwrap.dedent(
+            """
+            Filter results by source of TTP object.
+            """
+        ),
+        enum=['cve', 'cwe', 'enterprise-attack', 'ics-attack', 'mobile-attack', 'capec', 'location', 'disarm', 'atlas']
+    )
+    ttp_id = OpenApiParameter(
+        "ttp_id",
+        description=textwrap.dedent(
+            """
+            Filter results by external ID of TTP object. i.e T1047, CVE-2023-12345
+            """
+        ),
+    )
+    
     name = OpenApiParameter(
         "name",
         description=textwrap.dedent(
@@ -97,6 +115,7 @@ class QueryParams:
         name,
         labels,
         sdo_types,
+        ttp_type, ttp_id,
         OpenApiParameter("sort", enum=SDO_SORT_FIELDS),
     ]
 

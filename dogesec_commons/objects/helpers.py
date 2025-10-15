@@ -417,6 +417,22 @@ class ArangoDBHelper:
             bind_vars["name"] = "%" + self.get_like_literal(term) + "%"
             search_filters.append("doc.name LIKE @name")
 
+        if ttp_type := self.query.get('ttp_type'):
+            if ttp_type in ['cve', 'location', 'cwe']:
+                ttp_types_mapping = dict(cve='vulnerability', cwe='weakness', location='location')
+                bind_vars['types'] = [ttp_types_mapping[ttp_type]]
+            elif ttp_type.endswith('-attack'):
+                bind_vars['mitre_domain'] = ttp_type
+                search_filters.append('doc.x_mitre_domains IN [@mitre_domain]')
+            else:
+                ttp_source_name_mapping = dict(capec='capec', atlas='mitre-atlas', disarm='DISARM')
+                bind_vars['ttp_source_name'] = ttp_source_name_mapping[ttp_type]
+                other_filters.append('doc.external_references[0].source_name == @ttp_source_name')
+        
+        if ttp_id := self.query.get('ttp_id'):
+            bind_vars['ttp_id'] = ttp_id
+            other_filters.append('doc.external_references[0].external_id == @ttp_id')
+
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = (
@@ -445,7 +461,7 @@ class ArangoDBHelper:
         """
         # return HttpResponse(f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
-
+    
     def get_objects_by_id(self, id):
         bind_vars = {
             "@view": self.collection,

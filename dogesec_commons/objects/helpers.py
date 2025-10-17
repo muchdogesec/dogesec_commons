@@ -410,12 +410,12 @@ class ArangoDBHelper:
         other_filters = []
         search_filters = ["doc._is_latest == TRUE"]
         if term := self.query.get("labels"):
-            bind_vars["labels"] = term
-            other_filters.append("doc.labels[? ANY FILTER CONTAINS(CURRENT, @labels)]")
+            bind_vars["labels"] = term.lower()
+            other_filters.append("doc.labels[? ANY FILTER CONTAINS(LOWER(CURRENT), @labels)]")
 
         if term := self.query.get("name"):
-            bind_vars["name"] = "%" + self.get_like_literal(term) + "%"
-            search_filters.append("doc.name LIKE @name")
+            bind_vars["name"] = "%" + self.get_like_literal(term).lower() + "%"
+            other_filters.append("LOWER(doc.name) LIKE @name")
 
         if ttp_type := self.query.get('ttp_type'):
             if ttp_type in ['cve', 'location', 'cwe']:
@@ -550,7 +550,7 @@ class ArangoDBHelper:
             search_filters.append("doc._target_type IN @target_ref_type")
 
         if term := self.query.get("relationship_type"):
-            bind_vars["relationship_type"] = "%" + self.get_like_literal(term) + "%"
+            bind_vars["relationship_type"] = "%" + self.get_like_literal(term).lower() + "%"
             search_filters.append("doc.relationship_type LIKE @relationship_type")
 
         if not self.query_as_bool("include_embedded_refs", True):

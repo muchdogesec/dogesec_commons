@@ -484,7 +484,7 @@ def sdo_data():
             "type": "weakness",
             "id": "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
             "labels": ["weak label 1", "strong label 2"],
-            "name": "a weakness object",
+            "name": "a WeakNess object",
             "created": "2023-05-14T11:24:36Z",
             "modified": "2023-05-14T11:24:36Z",
         },
@@ -604,7 +604,7 @@ def sdo_data():
             ],
         ),
         (
-            dict(types="weakness", name="another"),
+            dict(types="weakness", name="AnoTher"),
             ["weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"],
         ),
         (dict(labels="strong"), ["weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e"]),
@@ -614,6 +614,7 @@ def sdo_data():
         (dict(ttp_type='atlas'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
         (dict(ttp_id='AM0101'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
         (dict(ttp_id='DISARM-001'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
+        (dict(ttp_id='AM'), []),
         (dict(ttp_id='AM'), []),
     ],
 )

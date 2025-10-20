@@ -11,6 +11,7 @@ from .helpers import (
     SMO_SORT_FIELDS,
     SCO_SORT_FIELDS,
     SDO_SORT_FIELDS,
+    ATTACK_FORMS,
 )
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -73,6 +74,17 @@ class QueryParams:
         ),
         enum=['cve', 'cwe', 'enterprise-attack', 'ics-attack', 'mobile-attack', 'capec', 'location', 'disarm', 'atlas']
     )
+    ttp_object_type = OpenApiParameter(
+        "ttp_object_type",
+        many=True,
+        explode=False,
+        description=textwrap.dedent(
+            """
+            Further filter results by properties more specific to certain ttp types.
+            """
+        ),
+        enum=list(ATTACK_FORMS),
+    )
     ttp_id = OpenApiParameter(
         "ttp_id",
         description=textwrap.dedent(
@@ -115,7 +127,7 @@ class QueryParams:
         name,
         labels,
         sdo_types,
-        ttp_type, ttp_id,
+        ttp_type, ttp_id, ttp_object_type,
         OpenApiParameter("sort", enum=SDO_SORT_FIELDS),
     ]
 

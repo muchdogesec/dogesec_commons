@@ -130,6 +130,15 @@ OBJECT_TYPES = (
     SDO_TYPES.union(SCO_TYPES).union(["relationship"]).union(SMO_TYPES).union()
 )
 
+TLP_VISIBLE_TO_ALL = (
+    # tlpv2
+    "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+    "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+    # tlpv1
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+    "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
+)
+
 
 def positive_int(integer_string, cutoff=None, default=1):
     """
@@ -453,17 +462,14 @@ class ArangoDBHelper:
                     "@attack_form_list[? ANY FILTER MATCHES(doc, CURRENT)]"
                 )
                 bind_vars["attack_form_list"] = form_list
-        
+
         if ttp_id := self.query.get('ttp_id'):
             bind_vars['ttp_id'] = ttp_id
             other_filters.append('doc.external_references[0].external_id == @ttp_id')
 
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
-            bind_vars["marking_visible_to_all"] = (
-                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
-                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
-            )
+            bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
                 "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
             )
@@ -486,7 +492,7 @@ class ArangoDBHelper:
         """
         # return HttpResponse(f"{query}\n\n// {__import__('json').dumps(bind_vars)}")
         return self.execute_query(query, bind_vars=bind_vars)
-    
+
     def get_objects_by_id(self, id):
         bind_vars = {
             "@view": self.collection,
@@ -533,10 +539,7 @@ class ArangoDBHelper:
 
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
-            bind_vars["marking_visible_to_all"] = (
-                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
-                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
-            )
+            bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             visible_to_filter = "FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL"
 
         query = """
@@ -597,10 +600,7 @@ class ArangoDBHelper:
 
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
-            bind_vars["marking_visible_to_all"] = (
-                "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
-                "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
-            )
+            bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
                 "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
             )

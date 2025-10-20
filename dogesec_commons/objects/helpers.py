@@ -12,7 +12,21 @@ from . import conf
 
 from django.conf import settings
 
-
+ATTACK_FORMS = {
+    "Tactic": [dict(type="x-mitre-tactic")],
+    "Technique": [
+        dict(type="attack-pattern", x_mitre_is_subtechnique=False),
+        dict(type="attack-pattern", x_mitre_is_subtechnique=None),
+    ],
+    "Sub-technique": [dict(type="attack-pattern", x_mitre_is_subtechnique=True)],
+    "Mitigation": [dict(type="course-of-action")],
+    "Group": [dict(type="intrusion-set")],
+    "Software": [dict(type="malware"), dict(type="tool"), dict(type='software')],
+    "Campaign": [dict(type="campaign")],
+    "Data Source": [dict(type="x-mitre-data-source")],
+    "Data Component": [dict(type="x-mitre-data-component")],
+    "Asset": [dict(type="x-mitre-asset")],
+}
 ATTACK_FLOW_TYPES = ["attack-flow", "attack-action"]
 
 SDO_TYPES = set(
@@ -428,6 +442,17 @@ class ArangoDBHelper:
                 ttp_source_name_mapping = dict(capec='capec', atlas='mitre-atlas', disarm='DISARM')
                 bind_vars['ttp_source_name'] = ttp_source_name_mapping.get(ttp_type, '===|===')
                 other_filters.append('doc.external_references[0].source_name == @ttp_source_name')
+
+        if ttp_object_type := self.query_as_array('ttp_object_type'):
+            form_list = []
+            for form in ttp_object_type:
+                form_list.extend(ATTACK_FORMS.get(form, []))
+
+            if form_list:
+                other_filters.append(
+                    "@attack_form_list[? ANY FILTER MATCHES(doc, CURRENT)]"
+                )
+                bind_vars["attack_form_list"] = form_list
         
         if ttp_id := self.query.get('ttp_id'):
             bind_vars['ttp_id'] = ttp_id

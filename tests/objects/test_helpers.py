@@ -614,6 +614,8 @@ def sdo_data():
         (dict(ttp_type='atlas'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
         (dict(ttp_id='AM0101'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
         (dict(ttp_id='DISARM-001'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
+        (dict(ttp_object_type='Software'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d', "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0"]),
+        (dict(ttp_object_type='Software,Group'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d', "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0", "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4"]),
         (dict(ttp_id='AM'), []),
         (dict(ttp_id='AM'), []),
     ],

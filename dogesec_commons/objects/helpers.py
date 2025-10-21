@@ -443,7 +443,7 @@ class ArangoDBHelper:
         if ttp_type := self.query.get('ttp_type'):
             if ttp_type in ['cve', 'location', 'cwe']:
                 ttp_types_mapping = dict(cve='vulnerability', cwe='weakness', location='location')
-                bind_vars['types'] = [ttp_types_mapping[ttp_type]]
+                bind_vars['types'] = list(set(types).intersection([ttp_types_mapping[ttp_type]]))
             elif ttp_type.endswith('-attack'):
                 bind_vars['mitre_domain'] = ttp_type
                 search_filters.append('doc.x_mitre_domains IN [@mitre_domain]')

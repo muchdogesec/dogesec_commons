@@ -609,6 +609,7 @@ def sdo_data():
         ),
         (dict(labels="strong"), ["weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e"]),
         (dict(ttp_type='cwe'), ['weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e', 'weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc']),
+        (dict(ttp_type='cwe', types='vulnerability'), []),
         (dict(ttp_type='cve'), ["vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"]),
         (dict(ttp_type='disarm'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
         (dict(ttp_type='atlas'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),

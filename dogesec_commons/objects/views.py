@@ -292,7 +292,7 @@ class QueryParams:
             404: DEFAULT_400_RESPONSE,
             400: DEFAULT_400_RESPONSE,
         },
-        parameters=[QueryParams.object_id_param],
+        parameters=[QueryParams.object_id_param, QueryParams.visible_to],
     ),
     bundle=extend_schema(
         summary="Get STIX Object's Bundle",

@@ -610,12 +610,18 @@ class ArangoDBHelper:
             "@view": self.collection,
             "id": id,
         }
+        visible_to_filter = ''
+        if visible_to := self.query.get('visible_to'):
+            visible_to_filter = "AND "+VISIBLE_TO_FILTER
+            bind_vars.update(visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL)
+
         query = """
             FOR doc in @@view
-            SEARCH doc.id == @id AND doc._is_latest == TRUE
+            SEARCH doc.id == @id AND doc._is_latest == TRUE #visible_to_filter
             LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
+        query = query.replace('#visible_to_filter', visible_to_filter)
         objs = self.execute_query(query, bind_vars=bind_vars, paginate=False)
         if not objs:
             raise NotFound("No object with id")

@@ -3,6 +3,7 @@ from dogesec_commons.objects import conf
 from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE
 from .helpers import (
     OBJECT_TYPES,
+    TTP_STIX_TYPES,
     ArangoDBHelper,
     SCO_TYPES,
     SDO_TYPES,
@@ -67,6 +68,8 @@ class QueryParams:
 
     ttp_type = OpenApiParameter(
         "ttp_type",
+        many=True,
+        explode=False,
         description=textwrap.dedent(
             """
             Filter results by source of TTP object.
@@ -122,13 +125,31 @@ class QueryParams:
         ),
         enum=SDO_TYPES,
     )
+    ttp_stix_types = OpenApiParameter(
+        "types",
+        many=True,
+        explode=False,
+        description=textwrap.dedent(
+            """
+            Filter the results by one or more STIX Domain Object types
+            """
+        ),
+        enum=TTP_STIX_TYPES,
+    )
 
     SDO_PARAMS = [
         name,
         labels,
         sdo_types,
+        OpenApiParameter("sort", enum=SDO_SORT_FIELDS),
+    ]
+    TTP_PARAMS = [
+        name,
+        labels,
+        ttp_stix_types,
         ttp_type, ttp_id, ttp_object_type,
         OpenApiParameter("sort", enum=SDO_SORT_FIELDS),
+
     ]
 
     source_ref = OpenApiParameter(
@@ -400,6 +421,17 @@ class ObjectsWithReportsView(SingleObjectView):
             """
         ),
     ),
+    knowledgebases=extend_schema(
+        responses=ArangoDBHelper.get_paginated_response_schema(),
+        parameters=ArangoDBHelper.get_schema_operation_parameters()
+        + QueryParams.TTP_PARAMS,
+        summary="Search and filter STIX Domain Objects",
+        description=textwrap.dedent(
+            """
+            Search for domain objects (aka TTPs). If you have the object ID already, you can use the base GET Objects endpoint.
+            """
+        ),
+    ),
 )
 class SDOView(viewsets.ViewSet):
     skip_list_view = True
@@ -407,6 +439,10 @@ class SDOView(viewsets.ViewSet):
 
     def list(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_sdos()
+    
+    @decorators.action(methods=['GET'], detail=False)
+    def knowledgebases(self, request, *args, **kwargs):
+        return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_sdos(ttps=True)
 
 
 @extend_schema_view(

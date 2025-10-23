@@ -138,6 +138,7 @@ TLP_VISIBLE_TO_ALL = (
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
     "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
+VISIBLE_TO_FILTER = "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.x_mitre_domains != NULL)"
 
 TTP_STIX_TYPES = set([
 #   "grouping",
@@ -500,7 +501,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+                VISIBLE_TO_FILTER
             )
 
         if other_filters:
@@ -582,7 +583,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+                VISIBLE_TO_FILTER
             )
 
         if other_filters:
@@ -651,7 +652,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            visible_to_filter = "FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL"
+            visible_to_filter = "FILTER "+VISIBLE_TO_FILTER
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -713,7 +714,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+                VISIBLE_TO_FILTER
             )
 
         query = f"""

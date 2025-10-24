@@ -138,6 +138,28 @@ TLP_VISIBLE_TO_ALL = (
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
     "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
+VISIBLE_TO_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
+
+TTP_STIX_TYPES = set([
+#   "grouping",
+  "weakness",
+  "relationship",
+  "attack-pattern",
+  "x-mitre-collection",
+  "x-mitre-matrix",
+  "x-mitre-tactic",
+  "campaign",
+  "course-of-action",
+  "intrusion-set",
+  "malware",
+  "tool",
+  "x-mitre-data-component",
+  "x-mitre-data-source",
+  "x-mitre-asset",
+  #
+  "software",
+  "vulnerability",
+])
 
 
 def positive_int(integer_string, cutoff=None, default=1):
@@ -421,8 +443,11 @@ class ArangoDBHelper:
         """
         return self.execute_query(query, bind_vars=bind_vars)
 
-    def get_sdos(self):
+    def get_sdos(self, ttps=None):
         types = SDO_TYPES
+        if ttps:
+            types = TTP_STIX_TYPES
+
         if new_types := self.query_as_array("types"):
             types = types.intersection(new_types)
 
@@ -440,17 +465,24 @@ class ArangoDBHelper:
             bind_vars["name"] = "%" + self.get_like_literal(term).lower() + "%"
             other_filters.append("LOWER(doc.name) LIKE @name")
 
-        if ttp_type := self.query.get('ttp_type'):
+        ttp_filters = set()
+        for ttp_type in self.query_as_array('ttp_type'):
             if ttp_type in ['cve', 'location', 'cwe']:
                 ttp_types_mapping = dict(cve='vulnerability', cwe='weakness', location='location')
-                bind_vars['types'] = list(set(types).intersection([ttp_types_mapping[ttp_type]]))
+                ttp_stix_types = bind_vars.setdefault('ttp_stix_types', [])
+                ttp_filters.add('doc.type IN @ttp_stix_types')
+                ttp_stix_types.append(ttp_types_mapping[ttp_type])
             elif ttp_type.endswith('-attack'):
-                bind_vars['mitre_domain'] = ttp_type
-                search_filters.append('doc.x_mitre_domains IN [@mitre_domain]')
+                ttp_mitre_domains = bind_vars.setdefault('ttp_mitre_domains', [])
+                ttp_mitre_domains.append(ttp_type)
+                ttp_filters.add('doc.x_mitre_domains ANY IN @ttp_mitre_domains')
             else:
                 ttp_source_name_mapping = dict(capec='capec', atlas='mitre-atlas', disarm='DISARM')
-                bind_vars['ttp_source_name'] = ttp_source_name_mapping.get(ttp_type, '===|===')
-                other_filters.append('doc.external_references[0].source_name == @ttp_source_name')
+                ttp_source_names = bind_vars.setdefault('ttp_source_names', [])
+                ttp_source_names.append(ttp_source_name_mapping.get(ttp_type))
+                ttp_filters.add('doc.external_references[0].source_name IN @ttp_source_names')
+        if ttp_filters:
+            other_filters.append("({})".format(' OR '.join(ttp_filters)))
 
         if ttp_object_type := self.query_as_array('ttp_object_type'):
             form_list = []
@@ -471,7 +503,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+                VISIBLE_TO_FILTER
             )
 
         if other_filters:
@@ -498,12 +530,18 @@ class ArangoDBHelper:
             "@view": self.collection,
             "id": id,
         }
+        visible_to_filter = ''
+        if visible_to := self.query.get('visible_to'):
+            visible_to_filter = "AND "+VISIBLE_TO_FILTER
+            bind_vars.update(visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL)
+
         query = """
             FOR doc in @@view
-            SEARCH doc.id == @id AND doc._is_latest == TRUE
+            SEARCH doc.id == @id AND doc._is_latest == TRUE #visible_to_filter
             LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
+        query = query.replace('#visible_to_filter', visible_to_filter)
         objs = self.execute_query(query, bind_vars=bind_vars, paginate=False)
         if not objs:
             raise NotFound("No object with id")
@@ -540,7 +578,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            visible_to_filter = "FILTER doc.created_by_ref == @visible_to OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.created_by_ref == NULL"
+            visible_to_filter = "FILTER "+VISIBLE_TO_FILTER
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -602,7 +640,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs)"
+                VISIBLE_TO_FILTER
             )
 
         query = f"""

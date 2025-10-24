@@ -608,17 +608,42 @@ def sdo_data():
             ["weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"],
         ),
         (dict(labels="strong"), ["weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e"]),
-        (dict(ttp_type='cwe'), ['weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e', 'weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc']),
-        (dict(ttp_type='cwe', types='vulnerability'), []),
-        (dict(ttp_type='cve'), ["vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"]),
-        (dict(ttp_type='disarm'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
-        (dict(ttp_type='atlas'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
-        (dict(ttp_id='AM0101'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d']),
-        (dict(ttp_id='DISARM-001'), ['attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140']),
-        (dict(ttp_object_type='Software'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d', "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0"]),
-        (dict(ttp_object_type='Software,Group'), ['malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d', "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0", "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4"]),
-        (dict(ttp_id='AM'), []),
-        (dict(ttp_id='AM'), []),
+        (
+            dict(ttp_type="cwe"),
+            [
+                "weakness--ac6f22ba-3909-43fa-8f81-1997590a1d7e",
+                "weakness--cbd67181-b9f8-595b-8bc3-3971e34fa1cc",
+            ],
+        ),
+        (dict(ttp_type="cwe", types="vulnerability"), []),
+        (dict(ttp_type="cve"), ["vulnerability--cbd67181-b9f8-595b-8bc3-3971e34fa1cc"]),
+        (
+            dict(ttp_type="disarm"),
+            ["attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140"],
+        ),
+        (dict(ttp_type="atlas"), ["malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d"]),
+        (dict(ttp_id="AM0101"), ["malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d"]),
+        (
+            dict(ttp_id="DISARM-001"),
+            ["attack-pattern--54e9c289-8786-44c2-8a60-bf4a541c1140"],
+        ),
+        (
+            dict(ttp_object_type="Software"),
+            [
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+            ],
+        ),
+        (
+            dict(ttp_object_type="Software,Group"),
+            [
+                "malware--1d3fcb2b-4718-4a65-9d0b-2f3d823dbf3d",
+                "tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0",
+                "intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4",
+            ],
+        ),
+        (dict(ttp_id="AM"), []),
+        (dict(ttp_id="AM"), []),
     ],
 )
 def test_sdo_filters(sdo_data, filters, expected_ids):
@@ -627,7 +652,6 @@ def test_sdo_filters(sdo_data, filters, expected_ids):
         request_from_queries(**filters),
     )
     objects = helper.get_sdos().data["objects"]
-    print([obj["id"] for obj in objects])
     assert {obj["id"] for obj in objects} == set(expected_ids)
 
 
@@ -1038,9 +1062,13 @@ def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
 
     if visible_to := filters.get("visible_to"):
         for obj in objects:
-            assert obj.get("created_by_ref") in [None, visible_to] or not set(
-                obj.get("object_marking_refs", [])
-            ).isdisjoint([green_ref, clear_ref])
+            assert (
+                obj.get("created_by_ref") in [None, visible_to]
+                or not set(obj.get("object_marking_refs", [])).isdisjoint(
+                    [green_ref, clear_ref]
+                )
+                or obj.get("x_mitre_domains")
+            )
 
     if types := filters.get("types"):
         types = types.split(",")
@@ -1060,9 +1088,14 @@ def test_visible_to(client, path, identity_ref):
     resp = client.get(path, query_params=dict(visible_to=identity_ref))
     objects = resp.data["objects"]
     for obj in objects:
-        assert obj.get("created_by_ref") in [None, identity_ref] or not set(
-            obj.get("object_marking_refs", [])
-        ).isdisjoint([green_ref, clear_ref])
+        d = (
+            obj.get("created_by_ref") in [None, identity_ref]
+            or not set(obj.get("object_marking_refs", [])).isdisjoint(
+                [green_ref, clear_ref]
+            )
+            or obj.get("x_mitre_domains")
+        )
+        assert d
 
 
 @pytest.mark.parametrize(

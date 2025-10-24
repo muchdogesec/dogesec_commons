@@ -123,6 +123,17 @@ class ProfileSerializer(serializers.ModelSerializer):
         ),
         help_text="extraction id(s)",
     )
+
+    ai_create_attack_flow = serializers.BooleanField(
+        required=False,
+        help_text="should create attack-flow (default is `false`)",
+        default=False,
+    )
+    ai_create_attack_navigator_layer = serializers.BooleanField(
+        required=False,
+        help_text="should create attack navigator layer (default is `false`)",
+        default=False,
+    )
     defang = serializers.BooleanField(
         help_text="If the text should be defanged before processing"
     )

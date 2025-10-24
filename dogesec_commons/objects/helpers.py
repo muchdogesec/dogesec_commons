@@ -138,7 +138,7 @@ TLP_VISIBLE_TO_ALL = (
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
     "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
-VISIBLE_TO_FILTER = "(doc.created_by_ref IN [@visible_to, NULL] OR @marking_visible_to_all ANY IN doc.object_marking_refs OR doc.x_mitre_domains != NULL)"
+VISIBLE_TO_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
 
 TTP_STIX_TYPES = set([
 #   "grouping",
@@ -480,7 +480,6 @@ class ArangoDBHelper:
                 ttp_filters.add('doc.external_references[0].source_name IN @ttp_source_name')
         if ttp_filters:
             other_filters.append("({})".format(' OR '.join(ttp_filters)))
-            print(other_filters[-1])
 
         if ttp_object_type := self.query_as_array('ttp_object_type'):
             form_list = []

@@ -138,7 +138,8 @@ TLP_VISIBLE_TO_ALL = (
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
     "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
-VISIBLE_TO_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
+VISIBLE_TO_SEARCH_FILTER = "((doc.created_by_ref == @visible_to OR NOT EXISTS(doc.created_by_ref)) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
+VISIBLE_TO_REGULAR_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
 
 TTP_STIX_TYPES = set([
 #   "grouping",
@@ -503,7 +504,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                VISIBLE_TO_FILTER
+                VISIBLE_TO_SEARCH_FILTER
             )
 
         if other_filters:
@@ -532,12 +533,13 @@ class ArangoDBHelper:
         }
         visible_to_filter = ''
         if visible_to := self.query.get('visible_to'):
-            visible_to_filter = "AND "+VISIBLE_TO_FILTER
+            visible_to_filter = "AND "+VISIBLE_TO_SEARCH_FILTER
             bind_vars.update(visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL)
 
         query = """
             FOR doc in @@view
-            SEARCH doc.id == @id AND doc._is_latest == TRUE #visible_to_filter
+            SEARCH doc.id == @id AND doc._is_latest == TRUE
+            #visible_to_filter
             LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
@@ -578,7 +580,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            visible_to_filter = "FILTER "+VISIBLE_TO_FILTER
+            visible_to_filter = "FILTER "+VISIBLE_TO_REGULAR_FILTER
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -640,7 +642,7 @@ class ArangoDBHelper:
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
             search_filters.append(
-                VISIBLE_TO_FILTER
+                VISIBLE_TO_SEARCH_FILTER
             )
 
         query = f"""

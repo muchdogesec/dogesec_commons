@@ -14,6 +14,8 @@ from django.conf import settings
 
 ATTACK_FORMS = {
     "Tactic": [dict(type="x-mitre-tactic")],
+    "Analytic": [dict(type="x-mitre-analytic")],
+    "Detection Strategy": [dict(type="x-mitre-detection-strategy")],
     "Technique": [
         dict(type="attack-pattern", x_mitre_is_subtechnique=False),
         dict(type="attack-pattern", x_mitre_is_subtechnique=None),
@@ -21,7 +23,7 @@ ATTACK_FORMS = {
     "Sub-technique": [dict(type="attack-pattern", x_mitre_is_subtechnique=True)],
     "Mitigation": [dict(type="course-of-action")],
     "Group": [dict(type="intrusion-set")],
-    "Software": [dict(type="malware"), dict(type="tool"), dict(type='software')],
+    "Software": [dict(type="malware"), dict(type="tool"), dict(type="software")],
     "Campaign": [dict(type="campaign")],
     "Data Source": [dict(type="x-mitre-data-source")],
     "Data Component": [dict(type="x-mitre-data-component")],
@@ -57,6 +59,8 @@ SDO_TYPES = set(
         "x-mitre-data-component",
         "x-mitre-data-source",
         "x-mitre-tactic",
+        "x-mitre-detection-strategy",
+        "x-mitre-analytic",
     ]
     + ATTACK_FLOW_TYPES
 )
@@ -140,26 +144,29 @@ TLP_VISIBLE_TO_ALL = (
 )
 VISIBLE_TO_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
 
-TTP_STIX_TYPES = set([
-#   "grouping",
-  "weakness",
-  "relationship",
-  "attack-pattern",
-  "x-mitre-collection",
-  "x-mitre-matrix",
-  "x-mitre-tactic",
-  "campaign",
-  "course-of-action",
-  "intrusion-set",
-  "malware",
-  "tool",
-  "x-mitre-data-component",
-  "x-mitre-data-source",
-  "x-mitre-asset",
-  #
-  "software",
-  "vulnerability",
-])
+TTP_STIX_TYPES = set(
+    [
+        #   "grouping",
+        "weakness",
+        "x-mitre-detection-strategy",
+        "x-mitre-analytic",
+        "attack-pattern",
+        "x-mitre-collection",
+        "x-mitre-matrix",
+        "x-mitre-tactic",
+        "campaign",
+        "course-of-action",
+        "intrusion-set",
+        "malware",
+        "tool",
+        "x-mitre-data-component",
+        "x-mitre-data-source",
+        "x-mitre-asset",
+        #
+        "software",
+        "vulnerability",
+    ]
+)
 
 
 def positive_int(integer_string, cutoff=None, default=1):
@@ -459,32 +466,40 @@ class ArangoDBHelper:
         search_filters = ["doc._is_latest == TRUE"]
         if term := self.query.get("labels"):
             bind_vars["labels"] = term.lower()
-            other_filters.append("doc.labels[? ANY FILTER CONTAINS(LOWER(CURRENT), @labels)]")
+            other_filters.append(
+                "doc.labels[? ANY FILTER CONTAINS(LOWER(CURRENT), @labels)]"
+            )
 
         if term := self.query.get("name"):
             bind_vars["name"] = "%" + self.get_like_literal(term).lower() + "%"
             other_filters.append("LOWER(doc.name) LIKE @name")
 
         ttp_filters = set()
-        for ttp_type in self.query_as_array('ttp_type'):
-            if ttp_type in ['cve', 'location', 'cwe']:
-                ttp_types_mapping = dict(cve='vulnerability', cwe='weakness', location='location')
-                ttp_stix_types = bind_vars.setdefault('ttp_stix_types', [])
-                ttp_filters.add('doc.type IN @ttp_stix_types')
+        for ttp_type in self.query_as_array("ttp_type"):
+            if ttp_type in ["cve", "location", "cwe"]:
+                ttp_types_mapping = dict(
+                    cve="vulnerability", cwe="weakness", location="location"
+                )
+                ttp_stix_types = bind_vars.setdefault("ttp_stix_types", [])
+                ttp_filters.add("doc.type IN @ttp_stix_types")
                 ttp_stix_types.append(ttp_types_mapping[ttp_type])
-            elif ttp_type.endswith('-attack'):
-                ttp_mitre_domains = bind_vars.setdefault('ttp_mitre_domains', [])
+            elif ttp_type.endswith("-attack"):
+                ttp_mitre_domains = bind_vars.setdefault("ttp_mitre_domains", [])
                 ttp_mitre_domains.append(ttp_type)
-                ttp_filters.add('doc.x_mitre_domains ANY IN @ttp_mitre_domains')
+                ttp_filters.add("doc.x_mitre_domains ANY IN @ttp_mitre_domains")
             else:
-                ttp_source_name_mapping = dict(capec='capec', atlas='mitre-atlas', disarm='DISARM')
-                ttp_source_names = bind_vars.setdefault('ttp_source_names', [])
+                ttp_source_name_mapping = dict(
+                    capec="capec", atlas="mitre-atlas", disarm="DISARM"
+                )
+                ttp_source_names = bind_vars.setdefault("ttp_source_names", [])
                 ttp_source_names.append(ttp_source_name_mapping.get(ttp_type))
-                ttp_filters.add('doc.external_references[0].source_name IN @ttp_source_names')
+                ttp_filters.add(
+                    "doc.external_references[0].source_name IN @ttp_source_names"
+                )
         if ttp_filters:
-            other_filters.append("({})".format(' OR '.join(ttp_filters)))
+            other_filters.append("({})".format(" OR ".join(ttp_filters)))
 
-        if ttp_object_type := self.query_as_array('ttp_object_type'):
+        if ttp_object_type := self.query_as_array("ttp_object_type"):
             form_list = []
             for form in ttp_object_type:
                 form_list.extend(ATTACK_FORMS.get(form, []))
@@ -495,16 +510,14 @@ class ArangoDBHelper:
                 )
                 bind_vars["attack_form_list"] = form_list
 
-        if ttp_id := self.query.get('ttp_id'):
-            bind_vars['ttp_id'] = ttp_id
-            other_filters.append('doc.external_references[0].external_id == @ttp_id')
+        if ttp_id := self.query.get("ttp_id"):
+            bind_vars["ttp_id"] = ttp_id
+            other_filters.append("doc.external_references[0].external_id == @ttp_id")
 
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            search_filters.append(
-                VISIBLE_TO_FILTER
-            )
+            search_filters.append(VISIBLE_TO_FILTER)
 
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
@@ -530,10 +543,12 @@ class ArangoDBHelper:
             "@view": self.collection,
             "id": id,
         }
-        visible_to_filter = ''
-        if visible_to := self.query.get('visible_to'):
-            visible_to_filter = "AND "+VISIBLE_TO_FILTER
-            bind_vars.update(visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL)
+        visible_to_filter = ""
+        if visible_to := self.query.get("visible_to"):
+            visible_to_filter = "AND " + VISIBLE_TO_FILTER
+            bind_vars.update(
+                visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL
+            )
 
         query = """
             FOR doc in @@view
@@ -541,7 +556,7 @@ class ArangoDBHelper:
             LIMIT 1
             RETURN KEEP(doc, KEYS(doc, true))
         """
-        query = query.replace('#visible_to_filter', visible_to_filter)
+        query = query.replace("#visible_to_filter", visible_to_filter)
         objs = self.execute_query(query, bind_vars=bind_vars, paginate=False)
         if not objs:
             raise NotFound("No object with id")
@@ -578,7 +593,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            visible_to_filter = "FILTER "+VISIBLE_TO_FILTER
+            visible_to_filter = "FILTER " + VISIBLE_TO_FILTER
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -616,7 +631,9 @@ class ArangoDBHelper:
             search_filters.append("doc._target_type IN @target_ref_type")
 
         if term := self.query.get("relationship_type"):
-            bind_vars["relationship_type"] = "%" + self.get_like_literal(term).lower() + "%"
+            bind_vars["relationship_type"] = (
+                "%" + self.get_like_literal(term).lower() + "%"
+            )
             search_filters.append("doc.relationship_type LIKE @relationship_type")
 
         if not self.query_as_bool("include_embedded_refs", True):
@@ -639,9 +656,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            search_filters.append(
-                VISIBLE_TO_FILTER
-            )
+            search_filters.append(VISIBLE_TO_FILTER)
 
         query = f"""
             FOR doc in @@collection

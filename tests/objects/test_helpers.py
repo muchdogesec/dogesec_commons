@@ -1,5 +1,6 @@
 import random
 import pytest
+import rest_framework.exceptions
 from dogesec_commons.objects import conf
 from dogesec_commons.objects.helpers import ArangoDBHelper
 from tests.objects.data import SRO_DATA
@@ -531,6 +532,8 @@ def sdo_data():
             "name": "NetProbe",
             "created": "2024-03-22T06:48:00Z",
             "modified": "2024-05-10T14:55:03Z",
+            'created_by_ref': 'xyz',
+            'object_marking_refs': ['1'],
         },
         {
             "type": "threat-actor",
@@ -540,6 +543,7 @@ def sdo_data():
             "created": "2021-12-07T21:33:10Z",
             "modified": "2021-12-07T21:33:10Z",
             "x_mitre_domains": ["mobile-attack"],
+            'created_by_ref': 'abc',
         },
         {
             "type": "attack-pattern",
@@ -554,6 +558,8 @@ def sdo_data():
                     "external_id": "DISARM-001",
                 }
             ],
+            'created_by_ref': 'xyz',
+            'object_marking_refs': ['1'],
         },
         {
             "type": "course-of-action",
@@ -569,6 +575,8 @@ def sdo_data():
                 }
             ],
             "x_mitre_domains": ["ics-attack", "mobile-attack"],
+            'object_marking_refs': ['marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9'],
+            'created_by_ref': 'xyz',
         },
         {
             "type": "intrusion-set",
@@ -673,6 +681,33 @@ def test_get_objects_by_id(sro_data, sdo_data, stix_id):
     )
     data = helper.get_objects_by_id(stix_id).data
     assert data["id"] == stix_id
+
+
+
+@pytest.mark.parametrize(
+    "stix_id,visible_to,returns",
+    [
+        ("threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a", "abc", True),
+        ("threat-actor--0f4c82ea-9e3d-49f2-a403-daa5e993f03a", "xyz", True), # no object_marking_refs
+        ("course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c", "abc", True), # is tlpv1 white, created_by xyz
+        ("course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c", "xyz", True), # is created by xyz
+        ("course-of-action--15e7f5e1-2453-4fc0-a4a2-8cd682b8c04c", "xyz", True), # is created by xyz
+        ("intrusion-set--73470fd9-33a5-4e60-84d6-8b0dc44ad3f4", "abc", True), # has no created_by_ref
+        ('tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0', "abc", False), # created_by_ref is xyz, not white or green
+        ("tool--ea8e1f1e-7d6b-43f7-91b7-4e5b1d22f1a0", "xyz", True),
+    ],
+)
+def test_get_objects_by_id_with_visible_to(sro_data, sdo_data, stix_id, visible_to,returns):
+    helper = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW,
+        request_from_queries(visible_to=visible_to),
+    )
+    if not returns:
+        with pytest.raises(NotFound):
+            helper.get_objects_by_id(stix_id)
+    else:
+        data = helper.get_objects_by_id(stix_id).data
+        assert data["id"] == stix_id
 
 
 @pytest.mark.parametrize(
@@ -814,6 +849,15 @@ green_ref, red_ref, clear_ref = (
     "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
     "marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c1",
     "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+)
+
+VISIBLE_MARKING_REFS = (
+    # tlpv2
+    "marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb",
+    "marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487",
+    # tlpv1
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+    "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
 
 
@@ -1065,7 +1109,7 @@ def test_get_object_bundle(bundle_data, stix_id, filters, expected_ids):
             assert (
                 obj.get("created_by_ref") in [None, visible_to]
                 or not set(obj.get("object_marking_refs", [])).isdisjoint(
-                    [green_ref, clear_ref]
+                    VISIBLE_MARKING_REFS
                 )
                 or obj.get("x_mitre_domains")
             )
@@ -1091,10 +1135,11 @@ def test_visible_to(client, path, identity_ref):
         d = (
             obj.get("created_by_ref") in [None, identity_ref]
             or not set(obj.get("object_marking_refs", [])).isdisjoint(
-                [green_ref, clear_ref]
+                VISIBLE_MARKING_REFS
             )
             or obj.get("x_mitre_domains")
         )
+        print(obj)
         assert d
 
 

@@ -264,6 +264,8 @@ class QueryParams:
     visible_to = OpenApiParameter(
         "visible_to",
         description="Only show objects that are visible to the Identity `id` passed. e.g. passing `identity--b1ae1a15-6f4b-431e-b990-1b9678f35e15` would only show reports created by that identity (with any TLP level) or objects created by another identity ID but only if they are marked with `TLP:WHITE` (v1), `TLP:CLEAR` (v2) or `TLP:GREEN` (v2). Logically visible to will return an object if 1) `created_by_ref equals visible_to (any TLP marking definitions not considered)` OR 2) `object_marking_ref contains a TLP:WHITE, TLP:CLEAR, or TLP:GREEN marking definition reference (any created_by_ref identity)` OR 3) `created_by_ref IS NULL` (this condition ensures SCOs with no created_by_ref always show)",
+        type=OpenApiTypes.STR,
+    )
     created_by_refs = OpenApiParameter(
         "created_by_refs",
         many=True,

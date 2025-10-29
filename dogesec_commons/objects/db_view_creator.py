@@ -100,10 +100,10 @@ def get_link_properties(collection_name: str):
 def link_one_collection(db: StandardDatabase, view_name, collection_name):
     logging.info(f"linking collection {collection_name} to {view_name}")
     view = db.view(view_name)
-    link = {"includeAllFields": True}
+    link = dict(includeAllFields=True, storeValues='id')
     if link and collection_name:
         view["links"][collection_name] = link
-    db.update_arangosearch_view(view_name, view)
+    v = db.update_arangosearch_view(view_name, view)
     logging.info(f"linked collection {collection_name} to {view_name}")
 
 
@@ -145,7 +145,7 @@ def link_all_collections(db: StandardDatabase, view: dict):
         collection_name = collection["name"]
         if collection["system"]:
             continue
-        links[collection_name] = {"includeAllFields": True}
+        links[collection_name] = dict(includeAllFields=True, storeValues='id')
         if not links[collection_name]:
             del links[collection]
             continue

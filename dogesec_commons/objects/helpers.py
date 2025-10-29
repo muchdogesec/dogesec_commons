@@ -78,6 +78,7 @@ SCO_TYPES = set(
         "email-addr",
         "email-message",
         "file",
+        "data-source",
         "ipv4-addr",
         "ipv6-addr",
         "mac-addr",

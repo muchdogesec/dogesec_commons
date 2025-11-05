@@ -9,6 +9,7 @@ from django_filters.rest_framework import (
     FilterSet,
     Filter,
     BooleanFilter,
+    ChoiceFilter
 )
 from .serializers import (
     DEFAULT_400_ERROR,
@@ -202,7 +203,7 @@ class ExtractorsView(txt2stixView):
     filter_backends = [DjangoFilterBackend]
 
     class filterset_class(FilterSet):
-        type = Filter(
+        type = ChoiceFilter(
             choices=[(extractor, extractor) for extractor in EXTRACTOR_TYPES],
             help_text="Filter Extractors by their `type`",
         )

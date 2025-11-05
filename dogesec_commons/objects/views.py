@@ -75,7 +75,7 @@ class QueryParams:
             Filter results by source of TTP object.
             """
         ),
-        enum=['cve', 'cwe', 'enterprise-attack', 'ics-attack', 'mobile-attack', 'capec', 'location', 'disarm', 'atlas']
+        enum=['cve', 'cwe', 'enterprise-attack', 'ics-attack', 'mobile-attack', 'capec', 'location', 'disarm', 'atlas', 'sector']
     )
     ttp_object_type = OpenApiParameter(
         "ttp_object_type",

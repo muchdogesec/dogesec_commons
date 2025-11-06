@@ -10,6 +10,17 @@ from rest_framework.exceptions import ValidationError, NotFound
 from stix2arango.services import ArangoDBService
 from . import conf
 
+from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE, DEFAULT_404_RESPONSE, HTTP400_EXAMPLE, make_response_schema_with_examples
+from dogesec_commons.utils.serializers import CommonErrorSerializer
+
+from drf_spectacular.utils import (
+    extend_schema_view,
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+)
+from drf_spectacular.types import OpenApiTypes
 from django.conf import settings
 
 ATTACK_FORMS = {
@@ -171,6 +182,22 @@ TTP_STIX_TYPES = set(
     ]
 )
 
+H400RESP_SCHEMA = make_response_schema_with_examples(
+    "The server did not understand the request",
+    [
+        HTTP400_EXAMPLE,
+        OpenApiExample(
+            "page-too-high",
+            {
+                "code": 400,
+                "details": {"error": "unable to serve page `999999991111111111`;"},
+                "message": "Bad Request",
+            },
+            description="When limit parameter is  >=2**32 items, arangodb fails and this endpoint throws a 400"
+        ),
+    ],
+)
+
 
 def positive_int(integer_string, cutoff=None, default=1):
     """
@@ -289,16 +316,7 @@ class ArangoDBHelper:
                     },
                 },
             },
-            400: {
-                "type": "object",
-                "properties": {
-                    "detail": {"type": "string"},
-                    "code": {"type": "integer"},
-                },
-                "required": [
-                    "code",
-                ],
-            },
+            400: H400RESP_SCHEMA,
         }
 
     @classmethod
@@ -357,7 +375,7 @@ class ArangoDBHelper:
     def get_offset_and_count(self, count, page) -> tuple[int, int]:
         page = page or 1
         if page >= 2**32:
-            raise ValidationError(f"invalid page `{page}`")
+            raise ValidationError(dict(error=f"unable to serve page `{page}`;"))
         offset = (page - 1) * count
         return offset, count
 
@@ -520,9 +538,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            search_filters.append(
-                VISIBLE_TO_SEARCH_FILTER
-            )
+            search_filters.append(VISIBLE_TO_SEARCH_FILTER)
 
         if other_filters:
             other_filters = "FILTER " + " AND ".join(other_filters)
@@ -548,10 +564,12 @@ class ArangoDBHelper:
             "@view": self.collection,
             "id": id,
         }
-        visible_to_filter = ''
-        if visible_to := self.query.get('visible_to'):
-            visible_to_filter = "AND "+VISIBLE_TO_SEARCH_FILTER
-            bind_vars.update(visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL)
+        visible_to_filter = ""
+        if visible_to := self.query.get("visible_to"):
+            visible_to_filter = "AND " + VISIBLE_TO_SEARCH_FILTER
+            bind_vars.update(
+                visible_to=visible_to, marking_visible_to_all=TLP_VISIBLE_TO_ALL
+            )
 
         query = """
             FOR doc in @@view
@@ -563,7 +581,7 @@ class ArangoDBHelper:
         query = query.replace("#visible_to_filter", visible_to_filter)
         objs = self.execute_query(query, bind_vars=bind_vars, paginate=False)
         if not objs:
-            raise NotFound("No object with id")
+            raise NotFound(dict(error=f"No object with id `{id}`"))
         return Response(objs[0])
 
     def get_object_bundle(self, stix_id):
@@ -597,7 +615,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            visible_to_filter = "FILTER "+VISIBLE_TO_REGULAR_FILTER
+            visible_to_filter = "FILTER " + VISIBLE_TO_REGULAR_FILTER
 
         query = """
             LET bundle_ids = FLATTEN(FOR doc in @@view SEARCH (doc.source_ref == @id or doc.target_ref == @id) AND doc._is_latest == TRUE /* rel_search_extras */ RETURN [doc._id, doc._from, doc._to])
@@ -660,9 +678,7 @@ class ArangoDBHelper:
         if q := self.query.get("visible_to"):
             bind_vars["visible_to"] = q
             bind_vars["marking_visible_to_all"] = TLP_VISIBLE_TO_ALL
-            search_filters.append(
-                VISIBLE_TO_SEARCH_FILTER
-            )
+            search_filters.append(VISIBLE_TO_SEARCH_FILTER)
 
         query = f"""
             FOR doc in @@collection

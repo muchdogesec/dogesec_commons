@@ -1,3 +1,4 @@
+from dogesec_commons.utils.schemas import make_response_schema_with_examples
 from .models import Profile
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -20,11 +21,28 @@ from django.forms import NullBooleanField
 
 from .serializers import ProfileSerializer
 
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiExample
 import django.db.models.deletion
 import textwrap
 
 EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
+
+H404_ERROR_SCHEMA = make_response_schema_with_examples(
+    "Profile does not exist",
+    [
+        OpenApiExample(
+            "not-found",
+            {
+                "code": 404,
+                "details": {
+                    "code": 404,
+                    "message": "No Profile matches the given query.",
+                },
+                "message": "Not Found",
+            },
+        )
+    ],
+)
 
 
 @extend_schema_view(
@@ -46,7 +64,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
         ),
         responses={
             400: DEFAULT_400_ERROR,
-            404: DEFAULT_404_ERROR,
+            404: H404_ERROR_SCHEMA,
             200: ProfileSerializer,
         },
     ),
@@ -95,7 +113,7 @@ EXTRACTOR_TYPES = ["lookup", "pattern", "ai"]
             Note: it is not currently possible to delete a profile that is referenced in an existing object. You must delete the objects linked to the profile first.
             """
         ),
-        responses={404: DEFAULT_404_ERROR, 204: None},
+        responses={404: H404_ERROR_SCHEMA, 204: None},
     ),
 )
 class ProfileView(viewsets.ModelViewSet):

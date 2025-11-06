@@ -1,6 +1,7 @@
 import contextlib
 from dogesec_commons.objects import conf
-from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE
+from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE, DEFAULT_404_RESPONSE
+from dogesec_commons.utils.serializers import CommonErrorSerializer
 from .helpers import (
     OBJECT_TYPES,
     TTP_STIX_TYPES,
@@ -14,7 +15,13 @@ from .helpers import (
     SDO_SORT_FIELDS,
     ATTACK_FORMS,
 )
-from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+from drf_spectacular.utils import (
+    extend_schema_view,
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiResponse,
+)
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import viewsets, exceptions, decorators
 from rest_framework.response import Response
@@ -96,7 +103,7 @@ class QueryParams:
             """
         ),
     )
-    
+
     name = OpenApiParameter(
         "name",
         description=textwrap.dedent(
@@ -147,9 +154,10 @@ class QueryParams:
         name,
         labels,
         ttp_stix_types,
-        ttp_type, ttp_id, ttp_object_type,
+        ttp_type,
+        ttp_id,
+        ttp_object_type,
         OpenApiParameter("sort", enum=SDO_SORT_FIELDS),
-
     ]
 
     source_ref = OpenApiParameter(
@@ -278,6 +286,23 @@ class QueryParams:
     )
 
 
+OBJ404_RESP_SCHEMA = OpenApiResponse(
+                CommonErrorSerializer,
+                "No such object",
+                [
+                    OpenApiExample(
+                        "not found",
+                        {
+                            "code": 404,
+                            "details": {
+                                "error": "No object with id `ipv4-addr--ba6b3f21-d818-4e7c-bfff-765805177512`"
+                            },
+                            "message": "Not Found",
+                        },
+                    )
+                ],
+            )
+
 @extend_schema_view(
     retrieve=extend_schema(
         summary="Get a STIX Object",
@@ -288,7 +313,7 @@ class QueryParams:
         ),
         responses={
             200: ArangoDBHelper.STIX_OBJECT_SCHEMA,
-            404: DEFAULT_400_RESPONSE,
+            404: OBJ404_RESP_SCHEMA,
             400: DEFAULT_400_RESPONSE,
         },
         parameters=[QueryParams.object_id_param, QueryParams.visible_to],
@@ -387,9 +412,9 @@ class ObjectsWithReportsView(SingleObjectView):
     def destroy_in_report(
         self, request, *args, object_id=None, report_id=None, **kwargs
     ):
-        ArangoDBHelper(
-            conf.ARANGODB_DATABASE_VIEW, request
-        ).delete_report_objects(report_id=report_id, object_ids=[object_id])
+        ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).delete_report_objects(
+            report_id=report_id, object_ids=[object_id]
+        )
         return Response(status=204)
 
     @decorators.action(
@@ -438,8 +463,8 @@ class SDOView(viewsets.ViewSet):
 
     def list(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_sdos()
-    
-    @decorators.action(methods=['GET'], detail=False)
+
+    @decorators.action(methods=["GET"], detail=False)
     def knowledgebases(self, request, *args, **kwargs):
         return ArangoDBHelper(conf.ARANGODB_DATABASE_VIEW, request).get_sdos(ttps=True)
 

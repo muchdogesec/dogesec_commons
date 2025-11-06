@@ -510,7 +510,7 @@ class ArangoDBHelper:
                 ttp_filters.add("doc.x_mitre_domains ANY IN @ttp_mitre_domains")
             else:
                 ttp_source_name_mapping = dict(
-                    capec="capec", atlas="mitre-atlas", disarm="DISARM"
+                    capec="capec", atlas="mitre-atlas", disarm="DISARM", sector='sector2stix',
                 )
                 ttp_source_names = bind_vars.setdefault("ttp_source_names", [])
                 ttp_source_names.append(ttp_source_name_mapping.get(ttp_type))

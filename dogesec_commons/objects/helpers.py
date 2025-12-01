@@ -159,7 +159,8 @@ VISIBLE_TO_REGULAR_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@m
 
 TTP_STIX_TYPES = set(
     [
-        #   "grouping",
+        "location",
+        ###
         "weakness",
         "x-mitre-detection-strategy",
         "x-mitre-analytic",

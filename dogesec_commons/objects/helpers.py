@@ -631,6 +631,7 @@ class ArangoDBHelper:
             SEARCH (doc._id IN bundle_ids OR (doc.id == @id AND doc._is_latest == TRUE))
             // extra_search
             // visible_to_filter
+            LET sort_doc = KEEP(doc, 'modified', 'created')
             // sort_stmt
             LIMIT @offset, @count
             RETURN KEEP(doc, KEYS(doc, TRUE))
@@ -645,7 +646,7 @@ class ArangoDBHelper:
         if visible_to_filter:
             query = query.replace("// visible_to_filter", visible_to_filter)
         
-        query = query.replace("// sort_stmt", self.get_sort_stmt(SRO_SORT_FIELDS))
+        query = query.replace("// sort_stmt", self.get_sort_stmt(BUNDLE_SORT_FIELDS, doc_name="sort_doc"))
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_sros(self):

@@ -3,6 +3,7 @@ from dogesec_commons.objects import conf
 from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE, DEFAULT_404_RESPONSE
 from dogesec_commons.utils.serializers import CommonErrorSerializer
 from .helpers import (
+    BUNDLE_SORT_FIELDS,
     OBJECT_TYPES,
     TTP_STIX_TYPES,
     ArangoDBHelper,
@@ -334,6 +335,7 @@ OBJ404_RESP_SCHEMA = OpenApiResponse(
             QueryParams.include_embedded_sros,
             QueryParams.visible_to,
             QueryParams.created_by_refs,
+            OpenApiParameter("sort", enum=BUNDLE_SORT_FIELDS)
         ],
     ),
 )

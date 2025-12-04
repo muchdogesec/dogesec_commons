@@ -1139,7 +1139,6 @@ def test_visible_to(client, path, identity_ref):
             )
             or obj.get("x_mitre_domains")
         )
-        print(obj)
         assert d
 
 

@@ -60,3 +60,14 @@ def test_filter_queryset_with_minmax_dates():
     mock_qs.filter.assert_called_once_with(
         modified__lte=expected_lte,
     )
+
+
+    mock_request.query_params = {
+        "modified_max": None,
+        "modified_min": "2024-01-01T00:00:00Z",
+    }
+    mock_qs.filter.reset_mock()
+    result = filter_backend.filter_queryset(mock_request, mock_qs, mock_view)
+    mock_qs.filter.assert_called_once_with(
+        modified__gte=expected_gte,
+    )

@@ -40,9 +40,13 @@ class MinMaxDateFilter(BaseFilterBackend):
         for param, value in valid_params:
             field_name = valid_fields[param]
             if param.endswith("_max"):
-                queries[f"{field_name}__lte"] = self.parse_date(value)
+                v = self.parse_date(value)
+                if v:
+                    queries[f"{field_name}__lte"] = v
             else:
-                queries[f"{field_name}__gte"] = self.parse_date(value)
+                v = self.parse_date(value)
+                if v:
+                    queries[f"{field_name}__gte"] = v
         return queryset.filter(**queries)
 
     def get_schema_operation_parameters(self, view):

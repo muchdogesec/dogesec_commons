@@ -46,6 +46,7 @@ from dogesec_commons.identity import serializers, models
     update=extend_schema(
         summary="Update an Identity",
         description="Update an existing STIX Identity object.",
+        responses={200: serializers.IdentitySerializer, 400: DEFAULT_400_RESPONSE},
     ),
     destroy=extend_schema(
         summary="Delete an Identity",

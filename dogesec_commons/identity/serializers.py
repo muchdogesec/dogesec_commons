@@ -24,6 +24,7 @@ class IdentitySerializer(serializers.ModelSerializer):
         return instance.dict
 
     def to_internal_value(self, data):
+        data = dict(data.copy())
         ## do initial validation
         if not self.instance:
             super().to_internal_value(data)
@@ -70,7 +71,9 @@ class IdentitySerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_schema(self):
-        UUID_RE = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+        UUID_RE = (
+            "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+        )
         return {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "$id": "https://example.com/stix/identity.schema.json",
@@ -106,14 +109,6 @@ class IdentitySerializer(serializers.ModelSerializer):
                 "description": {"type": "string"},
                 "identity_class": {
                     "type": "string",
-                    "enum": [
-                        "individual",
-                        "group",
-                        "organization",
-                        "class",
-                        "system",
-                        "unknown",
-                    ],
                 },
                 "sectors": {"type": "array", "items": {"type": "string"}},
                 "contact_information": {"type": "string"},

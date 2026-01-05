@@ -21,7 +21,7 @@ schema.config.base_url = "http://localhost:8005/"
 schema.config.generation = GenerationConfig(allow_x00=False)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def identities(db):
     identities = []
     for name, stix_id in [

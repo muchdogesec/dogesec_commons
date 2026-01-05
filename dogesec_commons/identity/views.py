@@ -77,7 +77,7 @@ class IdentityView(viewsets.ModelViewSet):  # Changed from ReadOnlyModelViewSet
             "identity_id",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.PATH,
-            description="The ID of the Identity object.",
+            description="The ID of the Identity object (e.g. `identity--643fea2b-5da6-47a9-9433-f8e97669f75b`)",
         )
     ]
 
@@ -85,5 +85,5 @@ class IdentityView(viewsets.ModelViewSet):  # Changed from ReadOnlyModelViewSet
         name = CharFilter(
             field_name="stix__name",
             lookup_expr="icontains",
-            help_text="Filter by identity name (case-insensitive, partial match).",
+            help_text="Filter by identity name (case-insensitive, partial match). e.g. `oge` would match `dogesec`, `DOGESEC`, etc.",
         )

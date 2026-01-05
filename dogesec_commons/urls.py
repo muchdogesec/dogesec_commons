@@ -22,6 +22,7 @@ from rest_framework import routers
 from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from dogesec_commons.objects import views as arango_views
+from dogesec_commons.identity.views import IdentityView
 
 router = routers.SimpleRouter(use_regex_path=False)
 
@@ -31,14 +32,15 @@ router.register("extractors", ExtractorsView, "extractors-view")
 
 ## objects
 regex_router = routers.SimpleRouter(use_regex_path=True)
-regex_router.register("", arango_views.ObjectsWithReportsView, "object-view-orig")
-regex_router.register("smos", arango_views.SMOView, "object-view-smo")
-regex_router.register("scos", arango_views.SCOView, "object-view-sco")
-regex_router.register("sros", arango_views.SROView, "object-view-sro")
-regex_router.register("sdos", arango_views.SDOView, "object-view-sdo")
+regex_router.register("identities", IdentityView, "identity-view")
+regex_router.register("objects", arango_views.ObjectsWithReportsView, "object-view-orig")
+regex_router.register("objects/smos", arango_views.SMOView, "object-view-smo")
+regex_router.register("objects/scos", arango_views.SCOView, "object-view-sco")
+regex_router.register("objects/sros", arango_views.SROView, "object-view-sro")
+regex_router.register("objects/sdos", arango_views.SDOView, "object-view-sdo")
 urlpatterns = [
-    path(f"api/", include(router.urls)),
-    path(f"objects/", include(regex_router.urls)),
+    path("api/", include(router.urls)),
+    path("", include(regex_router.urls)),
     path("admin/", admin.site.urls),
     # YOUR PATTERNS
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

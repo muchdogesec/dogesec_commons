@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dogesec_commons.stixifier',
+    'dogesec_commons.identity',
     'dogesec_commons.objects',
     'drf_spectacular',
 ]

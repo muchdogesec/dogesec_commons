@@ -22,6 +22,7 @@ from rest_framework import routers
 from dogesec_commons.stixifier.views import ExtractorsView, ProfileView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from dogesec_commons.objects import views as arango_views
+from dogesec_commons.identity.views import IdentityView
 
 router = routers.SimpleRouter(use_regex_path=False)
 
@@ -31,6 +32,7 @@ router.register("extractors", ExtractorsView, "extractors-view")
 
 ## objects
 regex_router = routers.SimpleRouter(use_regex_path=True)
+regex_router.register("identities", IdentityView, "identity-view")
 regex_router.register("objects", arango_views.ObjectsWithReportsView, "object-view-orig")
 regex_router.register("objects/smos", arango_views.SMOView, "object-view-smo")
 regex_router.register("objects/scos", arango_views.SCOView, "object-view-sco")

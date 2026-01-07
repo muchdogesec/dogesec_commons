@@ -24,11 +24,11 @@ class IdentitySerializer(serializers.ModelSerializer):
         return instance.dict
 
     def to_internal_value(self, data):
-        data = dict(data.copy())
         ## do initial validation
         if not self.instance:
             super().to_internal_value(data)
         # actual validation
+        data = dict(data.copy())
 
         if not isinstance(data, dict):
             raise serializers.ValidationError(

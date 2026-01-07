@@ -444,6 +444,48 @@ def test_get_scos_value_filter(subtests, objects, value, expected_ids):
             sco_sort_test()
 
 
+@pytest.fixture(scope="module")
+def sco_exact_match_data():
+    with make_s2a_uploads(
+        [("test_sco_values_exact", sco_objects)], truncate_collection=True
+    ) as s2a:
+        yield s2a
+@pytest.mark.parametrize(
+    ["value_exact", "expected_ids"],
+    [
+        pytest.param(
+            "AS12345",
+            ["as-1"],
+            id="exact-match-autonomous-system-on-number",
+        ),
+        pytest.param(
+            "DE89370400440532013000",
+            ["bank-acc-1"],
+            id="exact-match-bank-account-on-iban",
+        ),
+        pytest.param(
+            "4111111111111111",
+            ["payment-card-1"],
+            id="exact-match-payment-card-on-value",
+        ),
+        pytest.param(
+            "41111111",
+            [],
+            id="partial-match-payment-card-on-value-fails",
+        ),
+    ]
+)
+def test_value_exact(subtests, sco_exact_match_data, value_exact, expected_ids):
+    helper = ArangoDBHelper(
+        conf.ARANGODB_DATABASE_VIEW, request_from_queries(value_exact=value_exact)
+    )
+    response_data = helper.get_scos().data
+    objects = response_data["objects"]
+    object_ids = {obj["id"] for obj in objects}
+    assert object_ids == set(expected_ids)
+    with subtests.test("test sort"):
+        sco_sort_test()
+
 def sco_sort_test():
     helper_desc = ArangoDBHelper(
         conf.ARANGODB_DATABASE_VIEW,

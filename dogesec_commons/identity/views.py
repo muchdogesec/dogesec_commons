@@ -54,16 +54,11 @@ from dogesec_commons.identity import serializers, models
     ),
 )
 class IdentityView(viewsets.ModelViewSet):  # Changed from ReadOnlyModelViewSet
-    """
-    A viewset for viewing Identities.
-    Identities are the owners of feeds.
-    """
-
     http_method_names = ["get", "post", "put", "delete"]
     openapi_tags = ["Identities"]
     queryset = models.Identity.objects.all()
     serializer_class = serializers.IdentitySerializer
-    pagination_class = Pagination("identities")
+    pagination_class = Pagination("objects")
     lookup_field = "id"
     lookup_url_kwarg = "identity_id"
     lookup_value_regex = (

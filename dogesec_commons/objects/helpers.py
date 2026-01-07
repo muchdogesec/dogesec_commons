@@ -10,7 +10,12 @@ from rest_framework.exceptions import ValidationError, NotFound
 from stix2arango.services import ArangoDBService
 from . import conf
 
-from dogesec_commons.utils.schemas import DEFAULT_400_RESPONSE, DEFAULT_404_RESPONSE, HTTP400_EXAMPLE, make_response_schema_with_examples
+from dogesec_commons.utils.schemas import (
+    DEFAULT_400_RESPONSE,
+    DEFAULT_404_RESPONSE,
+    HTTP400_EXAMPLE,
+    make_response_schema_with_examples,
+)
 from dogesec_commons.utils.serializers import CommonErrorSerializer
 
 from drf_spectacular.utils import (
@@ -201,7 +206,7 @@ H400RESP_SCHEMA = make_response_schema_with_examples(
                 "details": {"error": "unable to serve page `999999991111111111`;"},
                 "message": "Bad Request",
             },
-            description="When limit parameter is  >=2**32 items, arangodb fails and this endpoint throws a 400"
+            description="When limit parameter is  >=2**32 items, arangodb fails and this endpoint throws a 400",
         ),
     ],
 )
@@ -397,40 +402,41 @@ class ArangoDBHelper:
             "@collection": self.collection,
             "types": list(types),
         }
+        search_exact = False
+        if value_exact := self.query.get("value_exact"):
+            bind_vars["search_value"] = value_exact.lower()
+            search_exact = True
         if value := self.query.get("value"):
             bind_vars["search_value"] = value.lower()
+
+        if bind_vars.get("search_value"):
+            search_value_filters = []
+            for key in [
+                    "value",           # ipv4-addr, ipv6-addr, mutex, url, domain-name, etc
+                    "name",            # file, software
+                    "number",          # autonomous-system
+                    "path",            # directory
+                    "body",            # email-message
+                    "subject",         # x509-certificate
+                    "key",             # windows-registry-key
+                    "display_name",    # user-account
+                    "string",          # user-agent
+                    "payload_bin",     # artifact
+                    "protocols",       # network-traffic
+                    "pid",             # process
+                    "cpe",             # software
+                    "iban",            # bank-account
+                    "account_number",  # bank-account
+                    "bic"              # bank-account
+            ]:
+                if search_exact:
+                    search_value_filters.append(f"LOWER(doc.{key}) == @search_value")
+                else:
+                    search_value_filters.append(f"CONTAINS(LOWER(doc.{key}), @search_value)")
             other_filters.append(
-                """
+                f"""
                 (
-                    doc.type == 'artifact' AND CONTAINS(LOWER(doc.payload_bin), @search_value) OR
-                    doc.type == 'autonomous-system' AND CONTAINS(LOWER(doc.number), @search_value) OR
-                    doc.type == 'bank-account' AND CONTAINS(LOWER(doc.iban), @search_value) OR
-                    doc.type == 'payment-card' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'cryptocurrency-transaction' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'cryptocurrency-wallet' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'directory' AND CONTAINS(LOWER(doc.path), @search_value) OR
-                    doc.type == 'domain-name' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'email-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'email-message' AND CONTAINS(LOWER(doc.body), @search_value) OR
-                    doc.type == 'file' AND CONTAINS(LOWER(doc.name), @search_value) OR
-                    doc.type == 'ipv4-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'ipv6-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'mac-addr' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'mutex' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'network-traffic' AND CONTAINS(LOWER(doc.protocols), @search_value) OR
-                    doc.type == 'phone-number' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'process' AND CONTAINS(LOWER(doc.pid), @search_value) OR
-                    doc.type == 'software' AND CONTAINS(LOWER(doc.name), @search_value) OR
-                    doc.type == 'url' AND CONTAINS(LOWER(doc.value), @search_value) OR
-                    doc.type == 'user-account' AND CONTAINS(LOWER(doc.display_name), @search_value) OR
-                    doc.type == 'user-agent' AND CONTAINS(LOWER(doc.string), @search_value) OR
-                    doc.type == 'windows-registry-key' AND CONTAINS(LOWER(doc.key), @search_value) OR
-                    doc.type == 'x509-certificate' AND CONTAINS(LOWER(doc.subject), @search_value)
-                    //generic
-                    OR
-                    CONTAINS(LOWER(doc.value), @search_value) OR
-                    CONTAINS(LOWER(doc.name), @search_value) OR
-                    CONTAINS(LOWER(doc.number), @search_value)
+                    {" OR ".join(search_value_filters)}
                 )
                 """.strip()
             )
@@ -518,7 +524,10 @@ class ArangoDBHelper:
                 ttp_filters.add("doc.x_mitre_domains ANY IN @ttp_mitre_domains")
             else:
                 ttp_source_name_mapping = dict(
-                    capec="capec", atlas="mitre-atlas", disarm="DISARM", sector='sector2stix',
+                    capec="capec",
+                    atlas="mitre-atlas",
+                    disarm="DISARM",
+                    sector="sector2stix",
                 )
                 ttp_source_names = bind_vars.setdefault("ttp_source_names", [])
                 ttp_source_names.append(ttp_source_name_mapping.get(ttp_type))
@@ -645,8 +654,10 @@ class ArangoDBHelper:
 
         if visible_to_filter:
             query = query.replace("// visible_to_filter", visible_to_filter)
-        
-        query = query.replace("// sort_stmt", self.get_sort_stmt(BUNDLE_SORT_FIELDS, doc_name="sort_doc"))
+
+        query = query.replace(
+            "// sort_stmt", self.get_sort_stmt(BUNDLE_SORT_FIELDS, doc_name="sort_doc")
+        )
         return self.execute_query(query, bind_vars=bind_vars)
 
     def get_sros(self):

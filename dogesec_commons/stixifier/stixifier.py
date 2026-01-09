@@ -106,7 +106,7 @@ class StixifyProcessor:
         self.md_file = self.tmpdir / f"post_md_{self.report_id or 'file'}.md"
         self.md_file.write_text(self.output_md)
 
-    def txt2stix(self):
+    def txt2stix(self, txt2stix_data=None) -> txt2stixBundler:
         extractors = all_extractors(self.profile.extractions)
         extractors_map = {}
         for extractor in extractors.values():
@@ -152,6 +152,7 @@ class StixifyProcessor:
             relationship_mode=self.profile.relationship_mode,
             ignore_extraction_boundary=self.profile.ignore_extraction_boundary,
             ai_extract_if_no_incidence=self.profile.ai_extract_if_no_incidence,
+            txt2stix_data=txt2stix_data,
         )
         self.incident = self.txt2stix_data.content_check
         self.summary = self.incident and self.incident.summary

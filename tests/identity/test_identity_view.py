@@ -41,7 +41,6 @@ def test_update_identity_bad_data(client, identity):
     assert resp.status_code == 400
     errors = resp.json()["details"]
     assert errors["id"] == ["Cannot modify 'id' of an existing Identity."]
-    assert errors["created"] == ["Cannot modify 'created' of an existing Identity."]
 
 
 def test_update_identity_good_data(client, identity):

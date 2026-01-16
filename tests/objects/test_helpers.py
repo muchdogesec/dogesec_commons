@@ -451,7 +451,7 @@ def sco_exact_match_data():
     ) as s2a:
         yield s2a
 @pytest.mark.parametrize(
-    ["value_exact", "expected_ids"],
+    ["value", "expected_ids"],
     [
         pytest.param(
             "AS12345",
@@ -475,9 +475,9 @@ def sco_exact_match_data():
         ),
     ]
 )
-def test_value_exact(subtests, sco_exact_match_data, value_exact, expected_ids):
+def test_value_exact(subtests, sco_exact_match_data, value, expected_ids):
     helper = ArangoDBHelper(
-        conf.ARANGODB_DATABASE_VIEW, request_from_queries(value_exact=value_exact)
+        conf.ARANGODB_DATABASE_VIEW, request_from_queries(value=value, value_exact="true")
     )
     response_data = helper.get_scos().data
     objects = response_data["objects"]

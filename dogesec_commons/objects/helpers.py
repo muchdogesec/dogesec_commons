@@ -402,10 +402,7 @@ class ArangoDBHelper:
             "@collection": self.collection,
             "types": list(types),
         }
-        search_exact = False
-        if value_exact := self.query.get("value_exact"):
-            bind_vars["search_value"] = value_exact.lower()
-            search_exact = True
+        search_exact = self.query_as_bool("value_exact", False)
         if value := self.query.get("value"):
             bind_vars["search_value"] = value.lower()
 

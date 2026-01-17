@@ -13,6 +13,8 @@ SEMANTIC_SEARCH_SORT_FIELDS = [
     "type_descending",
 ]
 
+import textwrap
+
 from django_filters.rest_framework import (
     CharFilter,
     DjangoFilterBackend,
@@ -40,12 +42,38 @@ from dogesec_commons.identity import serializers, models
     ),
     create=extend_schema(
         summary="Create an Identity",
-        description="Create a new STIX Identity object.",
+        description=textwrap.dedent(
+            """
+            Upload a valid STIX Identity object.
+
+            The Identity object will be validated against the STIX specification.
+
+            Some notes about Identity creation to be aware of
+
+            * The Identity object you submit will be unmodified in this request
+            * All properties will be validated against the STIX specification to ensure compliance. If validation fails, the object will not be updated.
+            * You can use custom properties. These will not be validated against any schema.
+            """
+        ),
         responses={201: serializers.IdentitySerializer, 400: DEFAULT_400_RESPONSE},
     ),
     update=extend_schema(
         summary="Update an Identity",
-        description="Update an existing STIX Identity object.",
+        description=textwrap.dedent(
+            """
+            Update a STIX Identity object.
+
+            When an Identity object is updated, all references to this identity will point to the latest version you upload.
+
+            IMPORTANT behaviour to be aware of:
+
+            * You cannot edit the following properties in this request: `spec_version`, `modified`, `created`, `type`. You should pass the full identity object, but they will be ignored in processing.
+            * The `id` passed in the body must match the `id` passed in URL of the request.
+            * On update, the `modified` time of the object will be updated to match the current time. The `created` date will remain the same
+            * All changes will be validated against the STIX specification to ensure compliance. If validation fails, the object will not be updated.
+            * You cannot modify an Identity uploaded to a Feed using this endpoint. You must update it using the Feed objects endpoints.
+            """
+        ),
         responses={200: serializers.IdentitySerializer, 400: DEFAULT_400_RESPONSE},
     ),
     destroy=extend_schema(

@@ -72,6 +72,7 @@ class QueryParams:
         sco_types,
         post_id,
         OpenApiParameter("sort", enum=SCO_SORT_FIELDS),
+        OpenApiParameter("value_exact", type=OpenApiTypes.BOOL, description="Set to `true` to only return exact matches on the `value` field. Default behaviour is wildcard search."),
     ]
 
     ttp_type = OpenApiParameter(

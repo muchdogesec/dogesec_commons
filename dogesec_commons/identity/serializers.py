@@ -34,21 +34,11 @@ class IdentitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"non_field_errors": ["STIX Identity must be a JSON object (dict)."]}
             )
-        invalid_update_keys = [
-            "created",
-            "id",
-            "modified",
-        ]
         if self.instance:
-            invalidated_error_message = {}
-            for key in invalid_update_keys:
-                if key in data and data[key] != self.instance.dict.get(key):
-                    invalidated_error_message[key] = [
-                        f"Cannot modify '{key}' of an existing Identity."
-                    ]
-
-            if invalidated_error_message:
-                raise serializers.ValidationError(invalidated_error_message)
+            if 'id' in data and data['id'] != self.instance.id:
+                raise serializers.ValidationError(
+                    {"id": ["Cannot modify 'id' of an existing Identity."]}
+                )
 
         if self.instance:
             # For updates, merge existing stix data with new data

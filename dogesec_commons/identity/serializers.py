@@ -49,6 +49,10 @@ class IdentitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"stix_validation_error": [f"Invalid STIX Identity object: {exc}"]}
             )
+        except Exception as exc:
+            raise serializers.ValidationError(
+                {"bad_data_error": [f"Unexpected STIX Validation error: {exc}"]}
+            )
         value_dict = json.loads(identity.serialize())
         retval = {}
         retval["stix"] = value_dict.copy()

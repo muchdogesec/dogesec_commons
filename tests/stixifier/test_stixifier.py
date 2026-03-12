@@ -130,7 +130,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
         ) as mock_parse_model,
     ):
         mock_bundler = MagicMock()
-        mock_bundler.report.id = "report--abc"
+        mock_bundler.report = {"id": "report--abc"}
         mock_bundler_cls.return_value = mock_bundler
         mock_run.return_value.content_check = MagicMock()
 
@@ -171,6 +171,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
             relationship_mode="full",
             ignore_extraction_boundary=True,
             ai_extract_if_no_incidence=False,
+            txt2stix_data=None,
         )
 
         assert processor.txt2stix_data == mock_run.return_value
@@ -210,9 +211,9 @@ def test_upload_to_arango(fake_file, fake_profile):
             ignore_embedded_relationships_smo=False,
             ignore_embedded_relationships_sro=False,
             include_embedded_relationships_attributes=["object_refs", "created_by_ref"],
-            host_url=mock_s2a.call_args[1]['host_url'],
-            username=mock_s2a.call_args[1]['username'],
-            password=mock_s2a.call_args[1]['password'],
+            host_url=mock_s2a.call_args[1]["host_url"],
+            username=mock_s2a.call_args[1]["username"],
+            password=mock_s2a.call_args[1]["password"],
         )
 
 
@@ -224,7 +225,7 @@ def test_process(fake_file, fake_profile):
         patch.object(StixifyProcessor, "write_bundle"),
         patch.object(StixifyProcessor, "upload_to_arango") as mock_upload_to_arango,
     ):
-        assert processor.process() == mock_t2s.return_value.report.id
+        assert processor.process() == mock_t2s.return_value.report["id"]
         mock_f2t.assert_called_once()
         mock_t2s.assert_called_once()
         mock_upload_to_arango.assert_called_once()

@@ -127,7 +127,7 @@ class StixifyProcessor:
             created=self.report_prop.created,
             **self.report_prop.kwargs,
         )
-        self.extra_data["_stixify_report_id"] = str(self.bundler.report.id)
+        self.extra_data["_stixify_report_id"] = str(self.bundler.report["id"])
         input_text = txt2stix.utils.remove_links(
             self.output_md,
             self.profile.ignore_image_refs,
@@ -166,7 +166,7 @@ class StixifyProcessor:
         self.write_bundle(bundler)
         logging.info(f"uploading {self.task_name} to arangodb via stix2arango")
         self.upload_to_arango()
-        return bundler.report.id
+        return bundler.report["id"]
 
     def write_bundle(self, bundler: txt2stixBundler):
         bundle = json.loads(bundler.to_json())

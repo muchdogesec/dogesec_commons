@@ -130,7 +130,7 @@ def test_txt2stix(fake_file, fake_profile, settings):
         ) as mock_parse_model,
     ):
         mock_bundler = MagicMock()
-        mock_bundler.report.id = "report--abc"
+        mock_bundler.report = {"id": "report--abc"}
         mock_bundler_cls.return_value = mock_bundler
         mock_run.return_value.content_check = MagicMock()
 
@@ -210,9 +210,9 @@ def test_upload_to_arango(fake_file, fake_profile):
             ignore_embedded_relationships_smo=False,
             ignore_embedded_relationships_sro=False,
             include_embedded_relationships_attributes=["object_refs", "created_by_ref"],
-            host_url=mock_s2a.call_args[1]['host_url'],
-            username=mock_s2a.call_args[1]['username'],
-            password=mock_s2a.call_args[1]['password'],
+            host_url=mock_s2a.call_args[1]["host_url"],
+            username=mock_s2a.call_args[1]["username"],
+            password=mock_s2a.call_args[1]["password"],
         )
 
 

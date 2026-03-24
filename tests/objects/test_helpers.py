@@ -1180,6 +1180,7 @@ def test_visible_to(client, path, identity_ref):
                 VISIBLE_MARKING_REFS
             )
             or obj.get("x_mitre_domains")
+            or obj.get('object_marking_refs') == None # always show objects with no marking refs
         )
         assert d
 

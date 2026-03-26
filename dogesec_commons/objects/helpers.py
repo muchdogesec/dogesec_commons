@@ -166,8 +166,20 @@ TLP_VISIBLE_TO_ALL = (
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
     "marking-definition--34098fce-860f-48ae-8e50-ebd3cc5e41da",
 )
-VISIBLE_TO_SEARCH_FILTER = "((doc.created_by_ref == @visible_to OR NOT EXISTS(doc.created_by_ref)) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
-VISIBLE_TO_REGULAR_FILTER = "((doc.created_by_ref IN [@visible_to, NULL]) OR (@marking_visible_to_all ANY IN doc.object_marking_refs) OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains)"
+VISIBLE_TO_SEARCH_FILTER = (
+    "("
+    "(doc.created_by_ref == @visible_to OR NOT EXISTS(doc.created_by_ref) OR NOT EXISTS(doc.object_marking_refs))"  # Object created by the user or has no creator or marking refs
+    " OR (@marking_visible_to_all ANY IN doc.object_marking_refs)"  # Object has TLP marking visible to all
+    " OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains"  # Object is from MITRE ATT&CK domains
+    ")"
+)
+VISIBLE_TO_REGULAR_FILTER = (
+    "("
+    "(doc.created_by_ref IN [@visible_to, NULL] OR doc.object_marking_refs == NULL)"  # Object created by the user or has no creator or no marking refs
+    " OR (@marking_visible_to_all ANY IN doc.object_marking_refs)"  # Object has TLP marking visible to all
+    " OR ['enterprise-attack', 'mobile-attack', 'ics-attack'] ANY IN doc.x_mitre_domains"  # Object is from MITRE ATT&CK domains
+    ")"
+)
 
 TTP_STIX_TYPES = set(
     [

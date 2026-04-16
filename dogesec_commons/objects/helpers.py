@@ -433,7 +433,7 @@ class ArangoDBHelper:
                     "string",          # user-agent
                     "payload_bin",     # artifact
                     "protocols",       # network-traffic
-                    "cmd_line",        # process
+                    "command_line",    # process
                     "cpe",             # software
                     "iban",            # bank-account
                     "account_number",  # bank-account

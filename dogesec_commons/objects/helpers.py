@@ -65,6 +65,7 @@ SDO_TYPES = set(
         "note",
         "observed-data",
         "opinion",
+        "procedure",
         "report",
         "sighting",
         "threat-actor",
@@ -432,7 +433,7 @@ class ArangoDBHelper:
                     "string",          # user-agent
                     "payload_bin",     # artifact
                     "protocols",       # network-traffic
-                    "pid",             # process
+                    "command_line",    # process
                     "cpe",             # software
                     "iban",            # bank-account
                     "account_number",  # bank-account

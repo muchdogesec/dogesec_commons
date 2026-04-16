@@ -217,7 +217,7 @@ sco_objects = [
     {"type": "mutex", "value": "Global\\SomeMutex", "id": "mutex-1"},
     {"type": "network-traffic", "protocols": "tcp,udp,icmp", "id": "net-1"},
     {"type": "phone-number", "number": "+1-123-456-7890", "id": "phone-1"},
-    {"type": "process", "pid": "12399", "id": "process-1"},
+    {"type": "process", "command_line": "tcpdump -i eth0 'tcp port 123 or udp port 123'", "id": "process-1"},
     {"type": "software", "name": "Antivirus", "id": "software-1"},
     {"type": "url", "value": "https://example.com", "id": "url-1"},
     {"type": "user-account", "display_name": "Regular User", "id": "user-1"},
@@ -364,10 +364,10 @@ SCO_VALUE_FILTER_TEST_DATA = test_data = [
         id="match-phone-number-on-number",
     ),
     pytest.param(
-        [{"type": "process", "pid": "12399", "id": "process-1"}],
-        "123",
+        [{"type": "process", "command_line": "tcpdump -i eth0 'tcp port 123 or udp port 123'", "id": "process-1"}],
+        "dump",
         ["process-1"],
-        id="match-process-on-pid",
+        id="match-process-on-cmdline",
     ),
     pytest.param(
         [{"type": "software", "name": "StaticScan Antivirus", "id": "software-1"}],

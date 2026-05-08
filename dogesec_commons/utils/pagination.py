@@ -116,7 +116,7 @@ class CursorPagination(pagination.CursorPagination):
     def get_paginated_response_schema(self, schema):
         return {
             'type': 'object',
-            'required': ['results'],
+            'required': [self.results_key],
             'properties': {
                 'next': {
                     'type': 'string',

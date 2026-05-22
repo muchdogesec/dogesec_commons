@@ -94,12 +94,10 @@ class CursorPagination(pagination.CursorPagination):
         self.results_key = results_key
         super().__init__()
     
-    def encode_cursor(self, cursor):
-        self.base_url = getattr(self, 'base_url', '')
-        cursor_str = super().encode_cursor(cursor)
-        urlp = urlparse.urlparse(cursor_str)
+    def _cursor_from_url(self, url):
+        urlp = urlparse.urlparse(url)
         query = urlparse.parse_qs(urlp.query)
-        return query['cursor'][0]
+        return query.get('cursor', [None])[0]
     
     def __call__(self):
         return self.__class__(results_key=self.results_key)
@@ -107,13 +105,14 @@ class CursorPagination(pagination.CursorPagination):
 
     def get_paginated_response(self, data):
         return response.Response({
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
+            'next': self._cursor_from_url(self.get_next_link()),
+            'previous': self._cursor_from_url(self.get_previous_link()),
             'size': len(data),
             self.results_key: data,
         })
 
     def get_paginated_response_schema(self, schema):
+        self.base_url = ''
         return {
             'type': 'object',
             'required': [self.results_key],
@@ -122,13 +121,13 @@ class CursorPagination(pagination.CursorPagination):
                     'type': 'string',
                     'nullable': True,
                     'format': 'base64',
-                    'example': self.encode_cursor(pagination.Cursor(offset=50, reverse=False, position=None)),
+                    'example': self._cursor_from_url(self.encode_cursor(pagination.Cursor(offset=50, reverse=False, position=None))),
                 },
                 'previous': {
                     'type': 'string',
                     'nullable': True,
                     'format': 'base64',
-                    'example': self.encode_cursor(pagination.Cursor(offset=500, reverse=True, position=None)),
+                    'example': self._cursor_from_url(self.encode_cursor(pagination.Cursor(offset=500, reverse=True, position=None))),
                 },
                 'size': {
                     'type': 'integer',
@@ -176,12 +175,19 @@ class CompositeCursorPagination(CursorPagination):
         return self._encode_position(position)
     
     def _encode_position(self, position: list[str]) -> str:
-        return urlparse.urlencode(dict(zip(range(len(position)),position)))
-    
+        retval = {}
+        for i, pos in enumerate(position):
+            if pos is None:
+                pos = '\0'
+            retval[i] = pos
+        return urlparse.urlencode(retval)
+        
     def _decode_position(self, position) -> list[str]:
         data = urlparse.parse_qsl(position)
         position = []
-        for _, pos in sorted(data, key=lambda x: x[0]):
+        for _, pos in sorted(data, key=lambda x: int(x[0])):
+            if pos == '\0':
+                pos = None
             position.append(pos)
         return position
 
@@ -213,6 +219,8 @@ class CompositeCursorPagination(CursorPagination):
     def paginate_queryset(self, queryset, request, view=None):
         self.request = request
         self.page_size = self.get_page_size(request)
+        self.has_previous = False
+        self.has_next = False
         if not self.page_size:
             return None
 
@@ -234,7 +242,7 @@ class CompositeCursorPagination(CursorPagination):
 
         # If we have a cursor with a fixed position then filter by that.
         if current_position is not None:
-            queryset = self.filter_from_current_position(queryset, current_position)
+            queryset = self.filter_from_current_position(queryset, current_position, reverse)
 
         # If we have an offset cursor then offset the entire page by that amount.
         # We also always fetch an extra item in order to determine if there is a
@@ -278,13 +286,14 @@ class CompositeCursorPagination(CursorPagination):
 
         return self.page
     
-    def filter_from_current_position(self, queryset, cursor_position):
+    def filter_from_current_position(self, queryset, cursor_position, reverse=False):
         order = self.ordering[0]
         is_reversed = order.startswith('-')
         positions = self._decode_position(cursor_position)
         attrs = [(order_attr.lstrip('-')) for order_attr in self.ordering]
-        if self.cursor.reverse !=  is_reversed:
+        if reverse !=  is_reversed:
             op_filter = TupleLessThan(Tuple(*attrs), positions)
         else:
             op_filter = TupleGreaterThan(Tuple(*attrs), positions)
         return queryset.filter(op_filter)
+    

@@ -21,6 +21,9 @@ def as_arango2stix_db(db_name):
     return db_name
 
 
+def as_arango2stix_collection(k: str):
+        return k.removesuffix('_vertex_collection')
+
 @contextlib.contextmanager
 def make_s2a_uploads(
     uploads: list[tuple[str, list[dict]]],
@@ -33,7 +36,7 @@ def make_s2a_uploads(
     for collection, objects in uploads:
         s2a = Stix2Arango(
             database=database,
-            collection=collection,
+            collection=as_arango2stix_collection(collection),
             file="",
             host_url=settings.ARANGODB_HOST_URL,
             **kwargs,

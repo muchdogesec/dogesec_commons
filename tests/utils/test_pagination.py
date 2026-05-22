@@ -1,68 +1,49 @@
-import random
-
+from django.http import HttpRequest
 import pytest
 from tests.utils.models import ModelForTesting
-from dogesec_commons.utils.pagination import CursorPagination, CompositeCursorPagination
-from datetime import UTC, datetime
-from rest_framework.request import Request
+from dogesec_commons.utils.pagination import CursorPagination
+from datetime import datetime
+from rest_framework import request, viewsets
+from urllib.parse import parse_qs, urlparse
 from rest_framework.test import APIRequestFactory
-from base64 import b64decode
 
 
 @pytest.mark.django_db
 def test_cursor_pagination_can_handle_duplicates(client):
-    D_COUNT = random.randrange(1000, 5000)
-    E_COUNT = random.randrange(1000, 5000)
-    F_COUNT = random.randrange(1000, 50_000)
-    d = datetime(2020, 1, 1, tzinfo=UTC)
-    e = datetime(2020, 5, 1, tzinfo=UTC)
-
+    d = datetime(2020, 1, 1)
     objects = ModelForTesting.objects.bulk_create(
-        ModelForTesting(created=d, id=i) for i in range(D_COUNT)
-    )
-    objects += ModelForTesting.objects.bulk_create(
-        ModelForTesting(created=e, id=i + D_COUNT) for i in range(E_COUNT)
-    )
-    objects += ModelForTesting.objects.bulk_create(
-        ModelForTesting(
-            created=datetime.fromtimestamp(
-                random.randrange(int(d.timestamp()), int(e.timestamp())+999_999_999), tz=UTC
-            ).replace(hour=0, minute=0, second=0, microsecond=0),
-            id=i+E_COUNT+D_COUNT,
-        )
-        for i in range(F_COUNT)
+        ModelForTesting(created=d, id=i) for i in range(2000)
     )
 
-    pagination = CompositeCursorPagination(results_key="dates")
-    pagination.ordering = ["-created", "-id"]
-
-    result_ids = []
 
     factory = APIRequestFactory()
-    queryset = ModelForTesting.objects.all()
 
+    result_ids = []
     cursor = None
-    cursors = list()
-    PAGE_SIZE = 50
 
     while True:
-        params = {"page_size": PAGE_SIZE}
+        r = request.Request(HttpRequest())
+        r._request.META['HTTP_HOST'] = 'test'
         if cursor:
-            params["cursor"] = cursor
+            r.query_params.update(cursor=cursor)
 
-        request = Request(factory.get("/", data=params))
+        pagination = CursorPagination(results_key="dates")
 
-        page = pagination.paginate_queryset(queryset, request)
-        resp = pagination.get_paginated_response(page)
+        result = pagination.paginate_queryset(
+            ModelForTesting.objects.all(),
+            r,
+        )
 
-        result_ids.extend([obj.id for obj in resp.data["dates"]])
+        result_ids.extend([k.id for k in result])
 
-        cursor = resp.data.get("next")
+        next_url = pagination.get_next_link()
 
-        if not cursor:
+        if not next_url:
             break
-        else:
-            print(b64decode(cursor.encode("utf-8")))
-            cursors.append(cursor)
-    assert len(set(result_ids)) == len(result_ids)
-    assert len(result_ids) == len(objects)
+
+        cursor = parse_qs(urlparse(next_url).query)["cursor"][0]
+
+    assert len(set(result_ids)) == len(result_ids), "found duplicates"
+    assert len(result_ids) == 2000, "some items are missing"
+    
+

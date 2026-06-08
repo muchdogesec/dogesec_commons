@@ -106,6 +106,10 @@ LET data = MERGE(
     @updates[doc.id]
 )
 REPLACE doc._key WITH data IN @@collection
+    OPTIONS { 
+        ignoreRevs: false,    // CONFLICT if the document has already been updated in another transaction or query
+        ignoreErrors: true    // Prevents the entire query from crashing on intermittent conflicts
+    }
 COLLECT WITH COUNT INTO updated_count
 RETURN updated_count
     """

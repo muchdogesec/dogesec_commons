@@ -41,7 +41,7 @@ class Pagination(pagination.PageNumberPagination):
             self.page = paginator.page(page_number)
         except InvalidPage as exc:
             if isinstance(page_number, str):
-                page_number = int(page_number) if page_number.isdigit() else -1
+                page_number = int(page_number) if page_number.isdecimal() else -1
             self.page = DjangoPage([], page_number, paginator)
 
         return list(self.page)

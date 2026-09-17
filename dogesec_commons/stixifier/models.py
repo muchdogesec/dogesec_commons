@@ -1,11 +1,7 @@
-import txt2stix
 from django.conf import settings
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 import uuid
-from functools import partial
-import txt2stix.common
-import txt2stix, txt2stix.extractions
 from django.core.exceptions import ValidationError
 
 
@@ -15,8 +11,10 @@ class RelationshipMode(models.TextChoices):
 
 
 def validate_extractor(types, name):
+    import txt2stix.extractions
+    from txt2stix import get_include_path
     extractors = txt2stix.extractions.parse_extraction_config(
-        txt2stix.txt2stix.INCLUDES_PATH
+        get_include_path()
     ).values()
     for extractor in extractors:
         if name == extractor.slug and extractor.type in types:

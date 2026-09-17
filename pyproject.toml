@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dogesec_commons"
-version = "1.5.0"
+version = "1.5.1"
 authors = [
   { name = "dogesec" }
 ]
@@ -39,8 +39,8 @@ Issues = "https://github.com/muchdogesec/dogesec_commons/issues"
 
 [project.optional-dependencies]
 stixifier = [
-    "txt2stix>=1.4.0",
-    "file2txt",
+    "txt2stix>=1.7.2",
+    "file2txt>=1.1.0",
     "stix2arango",
 ]
 

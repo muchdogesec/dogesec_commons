@@ -1,16 +1,17 @@
 import uuid
 import pytest
-from pytest_django.fixtures import skip_if_no_django, SettingsWrapper
-
-
-
+from django.conf import settings
+from django.test import override_settings
 
 @pytest.fixture(autouse=True, scope="package")
 def s_settings():
-    skip_if_no_django()
+    if not settings.configured:
+        pytest.skip("Django settings are not configured")
 
-    settings = SettingsWrapper()
-    settings.STIXIFIER_NAMESPACE = uuid.uuid4()
-    settings.GOOGLE_VISION_API_KEY = settings.ARANGODB_DATABASE_VIEW = settings.INPUT_TOKEN_LIMIT = None
-    yield settings
-    settings.finalize()
+    with override_settings(
+        STIXIFIER_NAMESPACE=uuid.uuid4(),
+        GOOGLE_VISION_API_KEY=None,
+        ARANGODB_DATABASE_VIEW=None,
+        INPUT_TOKEN_LIMIT=None,
+    ):
+        yield settings

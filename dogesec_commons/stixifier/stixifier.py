@@ -13,7 +13,7 @@ import tempfile
 from file2txt.converter import get_parser_class
 from txt2stix import get_include_path
 from txt2stix.stix import txt2stixBundler
-from txt2stix.ai_extractor import BaseAIExtractor
+from txt2stix.ai_extractor.base import BaseAIExtractor
 from stix2arango.stix2arango import Stix2Arango
 from django.conf import settings
 from txt2stix.ai_extractor.utils import DescribesIncident

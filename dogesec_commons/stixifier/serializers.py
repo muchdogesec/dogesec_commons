@@ -7,8 +7,9 @@ from rest_framework import serializers
 from . import conf
 from .models import Profile
 from rest_framework import serializers
+from txt2stix import get_include_path
 import txt2stix.extractions
-import txt2stix.txt2stix
+import txt2stix.ai_extractor
 from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -26,9 +27,9 @@ def validate_model(model):
     if not model:
         return None
     try:
-        extractor = txt2stix.txt2stix.parse_model(model)
-    except BaseException as e:
-        raise ValidationError(f"invalid model: {model}")
+        txt2stix.ai_extractor.validate_model_spec(model)
+    except Exception as e:
+        raise ValidationError(f"invalid model: {model}") from e
     return model
 
 
@@ -40,7 +41,7 @@ def validate_ref(value: str):
 
 def validate_extractor(typestr, types, name):
     extractors = txt2stix.extractions.parse_extraction_config(
-        txt2stix.txt2stix.INCLUDES_PATH
+        get_include_path()
     )
     if name not in extractors or extractors[name].type not in types:
         raise ValidationError(f"`{name}` is not a valid {typestr}", 400)
@@ -58,7 +59,7 @@ def validate_stix_id(stix_id: str, type: str):
 
 def uses_ai(slugs):
     extractors = txt2stix.extractions.parse_extraction_config(
-        txt2stix.txt2stix.INCLUDES_PATH
+        get_include_path()
     )
     ai_based_extractors = []
     for slug in slugs:
@@ -237,7 +238,7 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
     def all_extractors(cls, types):
         retval = {}
         extractors = txt2stix.extractions.parse_extraction_config(
-            txt2stix.txt2stix.INCLUDES_PATH
+            get_include_path()
         ).values()
         for extractor in extractors:
             if extractor.type in types:
@@ -246,7 +247,7 @@ class Txt2stixExtractorSerializer(serializers.Serializer):
                     retval[extractor.slug]["file"] = urljoin(
                         conf.TXT2STIX_INCLUDE_URL,
                         str(
-                            extractor.file.relative_to(txt2stix.txt2stix.INCLUDES_PATH)
+                            extractor.file.relative_to(get_include_path())
                         ),
                     )
         return retval
